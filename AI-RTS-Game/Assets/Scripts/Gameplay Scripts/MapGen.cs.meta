@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d42b039ef5d419e46a8f2ee538b058ec
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - Walkable: {fileID: 157148, guid: bb8a7e9214a5abc40a2dfc02cb86f0b4, type: 2}
+  - Grass: {fileID: 141772, guid: 812097f46b86f5a4a8c864fa2022fe21, type: 2}
+  - Trees: {fileID: 134088, guid: c002da7138133724d9f2fd2c30889c17, type: 2}
+  - Swamp: {fileID: 176900, guid: 47baff8e2cf793a488b9b88d38044640, type: 2}
+  - Water: {fileID: 153468, guid: f6661d4136a49ce4681e9d2e8273b7ed, type: 2}
+  - OutOfBounds: {fileID: 167972, guid: 280f041625100c341bd2406dfb35f1b7, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
