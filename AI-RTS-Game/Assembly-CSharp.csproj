@@ -48,6 +48,8 @@
   <ItemGroup>
      <Compile Include="Assets\Scripts\Gameplay Scripts\CameraPanning.cs" />
      <Compile Include="Assets\Scripts\Gameplay Scripts\MapGen.cs" />
+     <Compile Include="Assets\Scripts\Task 3\TaskExecutive.cs" />
+     <Compile Include="Assets\Villager.cs" />
      <None Include="Assets\Characters\references.txt" />
      <None Include="Assets\Terrain\Thanks.txt" />
  <Reference Include="UnityEngine.UI">
