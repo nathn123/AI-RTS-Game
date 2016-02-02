@@ -7,6 +7,7 @@ public class Villager : MonoBehaviour {
     //possible to move these enums elsewhere
     public enum Skills
     {
+        Labourer,
         Rifleman,
         Trader,
         Blacksmith,
@@ -65,14 +66,17 @@ public class Villager : MonoBehaviour {
     public Vector2 Position;
     public Vector2 Goal;
     public Actions CurrentAction;
+    public Skills Skill;
     public bool ActionComplete;
     public float MoveSpeed;
     public float CurrentActionTime;
     public float ActionTime;
+    public int FOV;
     public Items Inventory;
 	// Use this for initialization
 	void Start () {
         Path = new List<Vector2>();
+        Skill = Skills.Labourer;
 	}
 	
 	// Update is called once per frame
@@ -84,7 +88,6 @@ public class Villager : MonoBehaviour {
         // if at path goal then do Action
         if (Position == Goal)
             DoAction();
-	
 	}
     public bool AddPath(List<Vector2> newPath)
     {
@@ -135,7 +138,7 @@ public class Villager : MonoBehaviour {
     }
     // possible abstraction from this class
     // especially due to the creation of villagers requiring 2 people, creating more than allowed
-    //should we move this to a building script ??????
+    // should we move this to a building script ??????
     public void DoAction() 
     {
         // not yet implemented

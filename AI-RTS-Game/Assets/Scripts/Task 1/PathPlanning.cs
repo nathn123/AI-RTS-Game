@@ -11,6 +11,7 @@ public class PathPlanning : MonoBehaviour {
         public Vector2 End;
         public List<Vector2> Path;
     }
+
     List<PathInfo> Paths;
 
 
