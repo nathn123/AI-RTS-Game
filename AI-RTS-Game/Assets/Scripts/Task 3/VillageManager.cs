@@ -11,10 +11,11 @@ public class VillageManager : MonoBehaviour {
     TaskPlanning TaskPlanner;
     public GlobalObjectives CurrentObj;
     public AI_Bias CurrentBias;
+    bool Initialised;
     List<GameObject> Villagers;
     char[,] Map, AiMap;
 
-    public enum GlobalObjectives
+    enum GlobalObjectives
     {
         IncreasePopulation,
         IncreaseRawResources,
@@ -26,6 +27,12 @@ public class VillageManager : MonoBehaviour {
         TradeResources,
         GoToWar
     }
+    public enum TaskObjectives
+    {
+
+    }
+
+
     public enum AI_Bias
     {
         Balanced, // No bias
@@ -33,6 +40,14 @@ public class VillageManager : MonoBehaviour {
         Aggressive, // focus on war
         Explorer, // focus on exploration, possible trade or war
         Turtle // focus on Defence of home but not attack of others
+    }
+
+    struct Plans
+    {
+        public List<List<Vector2>> Paths;
+        public List<Villager.Items> ItemsRequired;
+        public List<Villager.Skills> SkillsRequired; // .count = villagers required
+        public Villager.Actions TasktoBeCompleted;
     }
 	// Use this for initialization
 	void Start () {
@@ -47,6 +62,11 @@ public class VillageManager : MonoBehaviour {
         // if we want a scouting we need it 
         // how do we do it ............ 
         // duplicate maps updated with villager FOV  - large memory footprint ???? although only double char arrays 
+        if (!Initialised)
+            return;
+
+        UpdateMap();
+
 
 	
 	}

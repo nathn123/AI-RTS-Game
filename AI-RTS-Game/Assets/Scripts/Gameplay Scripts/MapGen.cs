@@ -8,6 +8,8 @@ public class MapGen : MonoBehaviour {
 
 	// Use this for initialization
     public GameObject Walkable,Grass, Trees, Swamp, Water, OutOfBounds;
+    char[,] AiMap;
+    GameObject[,] GameMap;
 	public void Start () {
 	
 	}
@@ -40,7 +42,8 @@ public class MapGen : MonoBehaviour {
                FinalMap[i, j] = mapline[j];
            }
        }
-       DrawMap(FinalMap, CreateGrid(32, height, width));
+       AiMap = FinalMap;
+       DrawMap(FinalMap, GameMap = CreateGrid(32, height, width));
     }
     public GameObject[,] CreateGrid(int TileSize, int height, int width)
     {
@@ -98,5 +101,10 @@ public class MapGen : MonoBehaviour {
                 }
             }
         }
+    }
+
+    public void GetMap(ref char[,] map)
+    {
+        map = AiMap;
     }
 }
