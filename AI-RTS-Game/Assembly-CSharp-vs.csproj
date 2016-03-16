@@ -51,8 +51,10 @@
      <Compile Include="Assets\Scripts\Gameplay Scripts\VillageGen.cs" />
      <Compile Include="Assets\Scripts\Gameplay Scripts\Villager.cs" />
      <Compile Include="Assets\Scripts\Task 1\PathPlanning.cs" />
+     <Compile Include="Assets\Scripts\Task 2\TaskPlanner.cs" />
      <Compile Include="Assets\Scripts\Task 2\TaskPlanning.cs" />
      <Compile Include="Assets\Scripts\Task 3\VillageManager.cs" />
+     <None Include="Assets\metricFF\Depend.xml" />
      <None Include="Assets\Characters\references.txt" />
      <None Include="Assets\Terrain\Thanks.txt" />
  <Reference Include="UnityEngine.UI">

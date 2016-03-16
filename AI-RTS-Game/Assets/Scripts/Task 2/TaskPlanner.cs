@@ -1,10 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+
 public class TaskPlanner : MonoBehaviour {
+
 
 	// Use this for initialization
 	void Start () {
+        
 	
 	}
 	
@@ -12,4 +15,5 @@ public class TaskPlanner : MonoBehaviour {
 	void Update () {
 	
 	}
+
 }

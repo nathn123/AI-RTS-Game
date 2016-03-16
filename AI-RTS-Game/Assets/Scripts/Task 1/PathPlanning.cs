@@ -39,6 +39,6 @@ public class PathPlanning : MonoBehaviour {
     {
         // add the struct 
         // get the value added at and then return
-        return 0;
+        return Paths.Count-1;
     }
 }

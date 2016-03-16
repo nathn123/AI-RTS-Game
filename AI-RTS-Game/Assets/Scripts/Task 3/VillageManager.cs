@@ -15,7 +15,7 @@ public class VillageManager : MonoBehaviour {
     List<GameObject> Villagers;
     char[,] Map, AiMap;
 
-    enum GlobalObjectives
+    public enum GlobalObjectives
     {
         IncreasePopulation,
         IncreaseRawResources,
