@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="ISO-8859-1"?><!DOCTYPE Durative-FF-Depend SYSTEM "Depend.dtd">
+<Durative-FF-Depend>
+<Operator>
+<Name>
+(PICK ALEX TREE1)</Name>
+
+</Operator>
+
+<Operator>
+<Name>
+(FLY ALEX TREE1 TREE2)</Name>
+
+<Depend>
+ 
+<On_Operator>
+ 
+<Name>
+(PICK ALEX TREE1)
+</Name>
+
+</On_Operator>
+ 
+</Depend>
+ 
+</Operator>
+
+<Operator>
+<Name>
+(PICK ALEX TREE2)</Name>
+
+<Depend>
+ 
+<On_Operator>
+ 
+<Name>
+(FLY ALEX TREE1 TREE2)
+</Name>
+
+</On_Operator>
+ 
+</Depend>
+ 
+</Operator>
+
+
+</Durative-FF-Depend>

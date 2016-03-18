@@ -18,7 +18,8 @@ public class TaskPlanning : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 
-        mFF.StartInfo.FileName = Application.dataPath + "metricFF/run.bat";
+        mFF.StartInfo.FileName = Application.dataPath + @"/scripts/PDDL/metric-ff.exe";
+        mFF.StartIn
 	}
 	
 	// Update is called once per frame

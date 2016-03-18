@@ -1,0 +1,8 @@
+; Time 0.00
+; ParsingTime
+; NrActions 3
+; MakeSpan 3
+; MetricValue 
+0: (PICK ALEX TREE1 ) [1]
+1: (FLY ALEX TREE1 TREE2 ) [1]
+2: (PICK ALEX TREE2 ) [1]
