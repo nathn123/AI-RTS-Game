@@ -136,9 +136,6 @@ public class Villager : MonoBehaviour {
         if (Position == Path[0])
             Path.RemoveAt(0);
     }
-    // possible abstraction from this class
-    // especially due to the creation of villagers requiring 2 people, creating more than allowed
-    // should we move this to a building script ??????
     public void DoAction() 
     {
         // not yet implemented
