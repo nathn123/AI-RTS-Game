@@ -31,6 +31,8 @@ public class VillageManager : MonoBehaviour {
     {
 
     }
+
+
     public enum AI_Bias
     {
         Balanced, // No bias
@@ -39,6 +41,7 @@ public class VillageManager : MonoBehaviour {
         Explorer, // focus on exploration, possible trade or war
         Turtle // focus on Defence of home but not attack of others
     }
+
     struct Plans
     {
         public List<List<Vector2>> Paths;
@@ -97,6 +100,7 @@ public class VillageManager : MonoBehaviour {
         Villagers.Add( GameObject.Instantiate(MaleVillager, new Vector3(StartingPos.x,StartingPos.y), Quaternion.identity) as GameObject);
         Villagers.Add( GameObject.Instantiate(FemaleVillager, new Vector3(StartingPos.x, StartingPos.y), Quaternion.identity) as GameObject);
     }
+
     void UpdateMap()
     {
         foreach(var villager in Villagers)
@@ -112,4 +116,5 @@ public class VillageManager : MonoBehaviour {
             }
         }
     }
+
 }
