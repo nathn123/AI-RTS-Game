@@ -31,6 +31,14 @@ public class VillageManager : MonoBehaviour {
     {
 
     }
+    public struct GameState
+    {
+
+    }
+    public struct GoalState
+    {
+
+    }
 
 
     public enum AI_Bias
@@ -66,10 +74,19 @@ public class VillageManager : MonoBehaviour {
             return;
 
         UpdateMap();
-
+        starttime = Time.time;
+        // after each step  we need to do to ensure it runs quickly
+        if (checktime())
+            return; 
 
 	
 	}
+        bool checktime()
+    {
+        if (Time.time - starttime > allowedtime)
+            return true;
+        return false;
+    }
     public void Initialise(Vector2 StartingPos,int VillageNum,AI_Bias bias,ref char[,] AiMap_)
     {
         if(VillageNum == 1)

@@ -1,5 +1,5 @@
-(define (problem coconut-prob1)
-  (:domain coconut)
+(define (problem prob)
+  (:domain dom)
   	
   (:objects 
 	alex - person 

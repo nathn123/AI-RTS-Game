@@ -30,7 +30,8 @@ public class Villager : MonoBehaviour {
         Saw_Wood,
         Make_Tool,
         Buy_Sell,
-        Combat
+        Combat,
+        Build
     };
     public enum Items
     {
