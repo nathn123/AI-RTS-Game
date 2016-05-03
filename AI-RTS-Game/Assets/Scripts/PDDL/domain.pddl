@@ -22,15 +22,16 @@
 	Timber  - item
 	Ore - item
 	Coal - item
-	Axe - item
-	;;Cart - item
-	Rifle - item
 	Money - item
 	Goods - item
+	tool - item
+	Axe - tool
+	Cart - tool
+	Rifle - tool
 	Labourer - skill
 	Rifleman - skill
 	Trader - skill
-	Blacksmith - skill
+	BlacksmithS - skill
 	Miner - skill
 	Lumberjack - skill
     Carpenter - skill
@@ -38,10 +39,10 @@
 	tree - location
 	Mine - location
 	Quarry - location
+	BuildingSite - location
 	)
 	
    (:predicates
-		;;(at ?i - item ?l - location)
 		(at ?p - person ?pl - location)
 		(has-item ?p - person)
 		(has-item ?l - location)
@@ -97,15 +98,77 @@
            :parameters (?p - person ?l - Sawmill)
            :precondition (and (has-Timber ?l) (at ?p ?l))
            :effect (and (has-Wood ?l) not(has-Timber ?l)))
+	(:action Mine_Coal
+           :parameters (?p - person ?l - mine)
+           :precondition ((at ?p ?l))
+           :effect (has-Coal ?p))
+	(:action Mine_Ore
+           :parameters (?p - person ?l - mine)
+           :precondition ((at ?p ?l))
+           :effect (has-Ore ?p))
+	(:action Make_Tool_Axe
+           :parameters (?p - person ?l - Blacksmith)
+           :precondition (and (has-BlacksmithS ?p) (at ?p ?l))
+           :effect (has-Axe ?l)
+	(:action Make_Tool_Cart
+           :parameters (?p - person ?l - Blacksmith)
+           :precondition (and (has-BlacksmithS ?p) (at ?p ?l))
+           :effect (has-Cart ?l)
+	(:action Make_Tool_Rifle
+           :parameters (?p - person ?l - Blacksmith)
+           :precondition (and (has-BlacksmithS ?p) (at ?p ?l))
+           :effect (has-Rifle ?l)
+   (:action Build_Turf
+           :parameters (?p1 - person ?l - BuildingSite)
+           :precondition ( (at ?p1 ?l))
+           :effect (?l - turfhut))
+	(:action Build_House
+           :parameters (?p1 - person ?p2 - person ?l - BuildingSite)
+           :precondition (and (has-Stone ?l)(has-Wood ?l)(has-Carpenter ?p1) (has-Labourer ?p2))
+           :effect (?l - House))
+	(:action Build_School
+           :parameters (?p1 - person ?p2 - person ?l - BuildingSite)
+           :precondition (and (has-Stone ?l)(has-Wood ?l)(has-Iron ?l)(has-Carpenter ?p1) (has-Labourer ?p2))
+           :effect (?l - School))
+	(:action Build_Barracks
+           :parameters (?p1 - person ?p2 - person ?l - BuildingSite)
+           :precondition (and (has-Stone ?l)(has-Wood ?l)(has-Carpenter ?p1) (has-Labourer ?p2))
+           :effect (?l - Barracks))
+	(:action Build_Storage
+           :parameters (?p1 - person ?p2 - person ?l - BuildingSite)
+           :precondition (and (has-Stone ?l)(has-Wood ?l)(has-Carpenter ?p1) (has-Labourer ?p2))
+           :effect (?l - Storage))
+	(:action Build_Mine
+           :parameters (?p1 - person ?p2 - person ?p3 - person ?l - BuildingSite)
+           :precondition (and (has-Iron ?l)(has-Wood ?l)(has-Carpenter ?p1) (has-Labourer ?p2)(has-BlacksmithS ?p3))
+           :effect (?l - Mine))
+	(:action Build_Smelter
+           :parameters (?p1 - person ?l - BuildingSite)
+           :precondition (and (has-Stone ?l)(has-Labourer ?p1))
+           :effect (?l - Smelter))
+	(:action Build_Quarry
+           :parameters (?p1 - person ?l - BuildingSite)
+           :precondition ((has-Labourer ?p1))
+           :effect (?l - Quarry))
+	(:action Build_Sawmill
+           :parameters (?p1 - person ?l - BuildingSite)
+           :precondition (and (has-Iron ?l)(has-Stone ?l)(has-Timber ?l) (has-Labourer ?p2))
+           :effect (?l - Sawmill))
+	(:action Build_Blacksmith
+           :parameters (?p1 - person ?l - BuildingSite)
+           :precondition (and (has-Iron ?l)(has-Stone ?l)(has-Timber ?l) (has-Labourer ?p2)(at ?p1 ?l))
+           :effect (?l - Blacksmith))
+	(:action Build_Market
+           :parameters (?p1 - person ?l - BuildingSite)
+           :precondition (and (has-Wood ?l)(has-Carpenter ?p2))
+           :effect (?l - Market_Stall))
+		   
 		   ;; ALL BELOW NEED COMPLETION
 		   
 		   
 		   
 		   
-	(:action Make_Tool_TOOLTYPE_
-           :parameters (?p - person ?l - Blacksmith)
-           :precondition (and (has-Blacksmith ?p) (at ?p ?l))
-           :effect ()
+
 	(:action Buy
            :parameters ()
            :precondition ()
@@ -119,30 +182,64 @@
            :parameters ()
            :precondition ()
            :effect ())
-
-	(:action pick
-			:parameters (?person - person ?place - location)
-			:precondition (and (in-balloon ?person) (at-balloon ?place) (has-coconuts ?place))
-			:effect (and (got-coconuts ?person ?place) (not (has-coconuts ?place))))
 			
 ;; special cases build building train people
    (:action Train
            :parameters (?p1 - person ?p2 - person ?l - School)
            :precondition (and (has-skill ?Labourer ? p2) (at ?p1 ?l)(at ?p2 ?l))
-           :effect (and (has-skill ?_____InsertSkill____ ? p2) not(has-skill ?Labourer ? p2)))
+           :effect (and (has-Rifleman ? p2) not(has-Labourer ? p2)))
    (:action Educate
            :parameters (?p1 - person ?p2 - person)
            :precondition ((has-skill ?Labourer ? p2))
-           :effect (and (has-skill ?_____InsertSkill____ ? p2) not(has-skill ?Labourer ? p2)))
+           :effect (and (has-Rifleman ? p2) not(has-Labourer ? p2)))
 		   
-   (:action Build
-           :parameters ()
-           :precondition ()
-           :effect ())
-   (:action Mine
-           :parameters (?p - person ?l - mine)
-           :precondition ()
-           :effect ())
+   (:action Train
+           :parameters (?p1 - person ?p2 - person ?l - School)
+           :precondition (and (has-skill ?Labourer ? p2) (at ?p1 ?l)(at ?p2 ?l))
+           :effect (and (has-Lumberjack ? p2) not(has-Labourer ? p2)))
+   (:action Educate
+           :parameters (?p1 - person ?p2 - person)
+           :precondition ((has-skill ?Labourer ? p2))
+           :effect (and (has-Lumberjack ? p2) not(has-Labourer ? p2)))
+		   
+   (:action Train
+           :parameters (?p1 - person ?p2 - person ?l - School)
+           :precondition (and (has-skill ?Labourer ? p2) (at ?p1 ?l)(at ?p2 ?l))
+           :effect (and (has-Trader ? p2) not(has-Labourer ? p2)))
+   (:action Educate
+           :parameters (?p1 - person ?p2 - person)
+           :precondition ((has-skill ?Labourer ? p2))
+           :effect (and (has-Trader ? p2) not(has-Labourer ? p2)))
+		   
+   (:action Train
+           :parameters (?p1 - person ?p2 - person ?l - School)
+           :precondition (and (has-skill ?Labourer ? p2) (at ?p1 ?l)(at ?p2 ?l))
+           :effect (and (has-BlacksmithS ? p2) not(has-Labourer ? p2)))
+   (:action Educate
+           :parameters (?p1 - person ?p2 - person)
+           :precondition ((has-skill ?Labourer ? p2))
+           :effect (and (has-BlacksmithS ? p2) not(has-Labourer ? p2)))
+		   
+   (:action Train
+           :parameters (?p1 - person ?p2 - person ?l - School)
+           :precondition (and (has-skill ?Labourer ? p2) (at ?p1 ?l)(at ?p2 ?l))
+           :effect (and (has-Carpenter ? p2) not(has-Labourer ? p2)))
+   (:action Educate
+           :parameters (?p1 - person ?p2 - person)
+           :precondition ((has-skill ?Labourer ? p2))
+           :effect (and (has-Carpenter ? p2) not(has-Labourer ? p2)))
+		   
+   (:action Train
+           :parameters (?p1 - person ?p2 - person ?l - School)
+           :precondition (and (has-skill ?Labourer ? p2) (at ?p1 ?l)(at ?p2 ?l))
+           :effect (and (has-Miner ? p2) not(has-Labourer ? p2)))
+   (:action Educate
+           :parameters (?p1 - person ?p2 - person)
+           :precondition ((has-skill ?Labourer ? p2))
+           :effect (and (has-Miner ? p2) not(has-Labourer ? p2)))
+		   
+		   
+		   
    (:action Store
            :parameters (?i - item ?m - money)
            :precondition ((has-item ?))

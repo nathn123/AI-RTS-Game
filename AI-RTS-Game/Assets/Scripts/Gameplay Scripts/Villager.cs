@@ -50,18 +50,7 @@ public class Villager : MonoBehaviour {
     };
     public enum Map_Items
     {
-        Tree,
-        Turf_Hut,
-        House,
-        School,
-        Barracks,
-        Storage,
-        Mine,
-        Smelter,
-        Quarry,
-        Sawmill,
-        Blacksmith,
-        Market_Stall
+        Tree
     }
     public List<Vector2> Path;
     public Vector2 Position;
@@ -147,7 +136,7 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Buy_Sell && ActionComplete == false)
         {
             // first check that square is correct
-            if (!CheckMap(Map_Items.Market_Stall, Position))
+            if (!CheckMap(Building.BuildingType.Market_Stall, Position))
                 return; // if the building required doesnt exist then return
             // second check the required people are here
             //third check the required resources are here
@@ -164,7 +153,7 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Cut_Tree && ActionComplete == false)
         {
             // first check that square is correct
-            if (!CheckMap(Map_Items.Tree, Position))
+           // if (!CheckMap(Map_Items.Tree, Position))
                 return; // if the building required doesnt exist then return
             // second check the required people are here
             //third check the required resources are here        
@@ -179,7 +168,7 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Educate_Barracks && ActionComplete == false)
         {
             // first check that square is correct
-            if (!CheckMap(Map_Items.Barracks, Position))
+            if (!CheckMap(Building.BuildingType.Barracks, Position))
                 return; // if the building required doesnt exist then return
             // second check the required people are here
             //third check the required resources are here
@@ -187,7 +176,7 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Family && ActionComplete == false)
         {
             // first check that square is correct
-            if (!CheckMap(Map_Items.Turf_Hut, Position))
+            if (!CheckMap(Building.BuildingType.Turf_Hut, Position))
                 return; // if the building required doesnt exist then return
             // second check the required people are here
             //third check the required resources are here
@@ -195,7 +184,7 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Family_House && ActionComplete == false)
         {
             // first check that square is correct
-            if (!CheckMap(Map_Items.House, Position))
+            if (!CheckMap(Building.BuildingType.House, Position))
                 return; // if the building required doesnt exist then return
             // second check the required people are here
             //third check the required resources are here
@@ -203,7 +192,7 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Make_Tool && ActionComplete == false)
         {
             // first check that square is correct
-            if (!CheckMap(Map_Items.Blacksmith, Position))
+            if (!CheckMap(Building.BuildingType.Blacksmith, Position))
                 return; // if the building required doesnt exist then return
             // second check the required people are here
             //third check the required resources are here
@@ -211,7 +200,7 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Mine && ActionComplete == false)
         {
             // first check that square is correct
-            if (!CheckMap(Map_Items.Mine, Position))
+            if (!CheckMap(Building.BuildingType.Mine, Position))
                 return; // if the building required doesnt exist then return
             // second check the required people are here
             //third check the required resources are here
@@ -219,7 +208,7 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Quarry && ActionComplete == false)
         {
             // first check that square is correct
-            if (!CheckMap(Map_Items.Quarry, Position))
+            if (!CheckMap(Building.BuildingType.Quarry, Position))
                 return; // if the building required doesnt exist then return
             // second check the required people are here
             //third check the required resources are here
@@ -227,7 +216,7 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Saw_Wood && ActionComplete == false)
         {
             // first check that square is correct
-            if (!CheckMap(Map_Items.Sawmill, Position))
+            if (!CheckMap(Building.BuildingType.Sawmill, Position))
                 return; // if the building required doesnt exist then return
             // second check the required people are here
             //third check the required resources are here
@@ -235,7 +224,7 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Smelt && ActionComplete == false)
         {
             // first check that square is correct
-            if (!CheckMap(Map_Items.Smelter, Position))
+            if (!CheckMap(Building.BuildingType.Smelter, Position))
                 return; // if the building required doesnt exist then return
             // second check the required people are here
             //third check the required resources are here
@@ -243,7 +232,7 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Store && ActionComplete == false)
         {
             // first check that square is correct
-            if (!CheckMap(Map_Items.Storage, Position))
+            if (!CheckMap(Building.BuildingType.Storage, Position))
                 return; // if the building required doesnt exist then return
             // second check the required people are here
             //third check the required resources are here
@@ -251,7 +240,7 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Train && ActionComplete == false)
         {
             // first check that square is correct
-            if (!CheckMap(Map_Items.School, Position))
+            if (!CheckMap(Building.BuildingType.School, Position))
                 return; // if the building required doesnt exist then return
             // second check the required people are here
             //third check the required resources are here
@@ -290,31 +279,31 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Train && ActionComplete == true)
         { }
     }
-    public bool CheckMap(Map_Items Check ,Vector2 pos)
+    public bool CheckMap(Building.BuildingType Check ,Vector2 pos)
     {
         char[,] map = new char[1,1]; // temp until map storage is decieded
         // if the map location contains the equavalent enum then return true
-        if (Check == Map_Items.Barracks && map[(int)pos.x, (int)pos.y] == 'B')
+        if (Check == Building.BuildingType.Barracks && map[(int)pos.x, (int)pos.y] == 'B')
             return true;
-        if (Check == Map_Items.Blacksmith && map[(int)pos.x, (int)pos.y] == 'L')
+        if (Check == Building.BuildingType.Blacksmith && map[(int)pos.x, (int)pos.y] == 'L')
             return true;
-        if (Check == Map_Items.House && map[(int)pos.x, (int)pos.y] == 'H')
+        if (Check == Building.BuildingType.House && map[(int)pos.x, (int)pos.y] == 'H')
             return true;
-        if (Check == Map_Items.Market_Stall && map[(int)pos.x, (int)pos.y] == 'M')
+        if (Check == Building.BuildingType.Market_Stall && map[(int)pos.x, (int)pos.y] == 'M')
             return true;
-        if (Check == Map_Items.Mine && map[(int)pos.x, (int)pos.y] == 'N')
+        if (Check == Building.BuildingType.Mine && map[(int)pos.x, (int)pos.y] == 'N')
             return true;
-        if (Check == Map_Items.Quarry && map[(int)pos.x, (int)pos.y] == 'Q')
+        if (Check == Building.BuildingType.Quarry && map[(int)pos.x, (int)pos.y] == 'Q')
             return true;
-        if (Check == Map_Items.Sawmill && map[(int)pos.x, (int)pos.y] == 'S')
+        if (Check == Building.BuildingType.Sawmill && map[(int)pos.x, (int)pos.y] == 'S')
             return true;
-        if (Check == Map_Items.School && map[(int)pos.x, (int)pos.y] == 'C')
+        if (Check == Building.BuildingType.School && map[(int)pos.x, (int)pos.y] == 'C')
             return true;
-        if (Check == Map_Items.Smelter && map[(int)pos.x, (int)pos.y] == 'M')
+        if (Check == Building.BuildingType.Smelter && map[(int)pos.x, (int)pos.y] == 'M')
             return true;
-        if (Check == Map_Items.Storage && map[(int)pos.x, (int)pos.y] == 'T')
+        if (Check == Building.BuildingType.Storage && map[(int)pos.x, (int)pos.y] == 'T')
             return true;
-        if (Check == Map_Items.Turf_Hut && map[(int)pos.x, (int)pos.y] == 'U')
+        if (Check == Building.BuildingType.Turf_Hut && map[(int)pos.x, (int)pos.y] == 'U')
             return true;
 
         return false;

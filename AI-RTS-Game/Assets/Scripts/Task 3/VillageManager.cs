@@ -12,7 +12,10 @@ public class VillageManager : MonoBehaviour {
     public GlobalObjectives CurrentObj;
     public AI_Bias CurrentBias;
     bool Initialised;
-    List<GameObject> Villagers;
+    List<Villager> Villagers;
+    List<Building> Buildings;
+    float starttime, allowedtime;
+
     char[,] Map, AiMap;
 
     public enum GlobalObjectives
@@ -33,11 +36,17 @@ public class VillageManager : MonoBehaviour {
     }
     public struct GameState
     {
-
+        // current state of game world // copy of the stored world state makes more sense
+        public List<Villager> Villagers;
+        public List<Building> OwnedLocations;
     }
     public struct GoalState
     {
-
+        // what we want at the end
+        List<Building.BuildingType> NewBuildings;
+        List<Villager.Items> NewItems;
+        List<Villager.Skills> NewSkills;
+        // only storing new values otherwise we would have to calculate the future gamestate too much effort
     }
 
 
@@ -113,9 +122,10 @@ public class VillageManager : MonoBehaviour {
         PathPlanner = new PathPlanning();
         CurrentBias = bias;
         AiMap = AiMap_;
-        Villagers = new List<GameObject>();
-        Villagers.Add( GameObject.Instantiate(MaleVillager, new Vector3(StartingPos.x,StartingPos.y), Quaternion.identity) as GameObject);
-        Villagers.Add( GameObject.Instantiate(FemaleVillager, new Vector3(StartingPos.x, StartingPos.y), Quaternion.identity) as GameObject);
+        Villagers = new List<Villager>();
+        
+        Villagers.Add((GameObject.Instantiate(MaleVillager, new Vector3(StartingPos.x, StartingPos.y), Quaternion.identity) as GameObject).GetComponent<Villager>() );
+        Villagers.Add( (GameObject.Instantiate(FemaleVillager, new Vector3(StartingPos.x, StartingPos.y), Quaternion.identity) as GameObject).GetComponent<Villager>());
     }
 
     void UpdateMap()

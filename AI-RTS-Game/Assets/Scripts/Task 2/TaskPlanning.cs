@@ -16,6 +16,7 @@ public class TaskPlanning : MonoBehaviour {
     int TempPlanID;
     List<string[]> TempPlanStorage;
     VillageManager.GameState currentGameState;
+    List<KeyValuePair<string,Villager>> UsableVillagers;
     public struct Task
     {
         public Villager.Items ItemsRequired;
@@ -23,7 +24,7 @@ public class TaskPlanning : MonoBehaviour {
         public Villager.Actions Action;
         public Vector2 Start;
         public Vector2 Goal;
-        public bool complete = false;
+        public bool complete;
     }
 	// Use this for initialization
 	void Start () {
@@ -65,6 +66,14 @@ public class TaskPlanning : MonoBehaviour {
     public void GetGameState(VillageManager.GameState State)
     {
         currentGameState = State;
+        
+        for(int i = 0; i < currentGameState.Villagers.Count; i++)
+            if(!currentGameState.Villagers[i].ActionComplete)
+            {
+                KeyValuePair<string,Villager> prekey = new KeyValuePair<string,Villager>("villager_" + i.ToString(),currentGameState.Villagers[i]);
+                UsableVillagers.Add(prekey);
+            }
+        // all buildings are considered usable
     }
     public List<Task> GetPlan(int planID)
     {
@@ -144,24 +153,155 @@ public class TaskPlanning : MonoBehaviour {
         writer.WriteLine("(:domain dom)");
         writer.WriteLine("(:objects");
         //here we add in all the objects
-        //we need access to the
-        for()
+        //we need access to the current game state to define the objects
+        for (int i = 0; i < UsableVillagers.Count;i++)
         {
+            writer.WriteLine(UsableVillagers[i].Key+" - person");
+        }
+       
+        for (int i = 0; i < currentGameState.OwnedLocations.Count; i++)
+        {
+            if(currentGameState.OwnedLocations[i].Type == Building.BuildingType.Barracks)
+            {
+                writer.WriteLine("building_"+i.ToString() + " - Barracks");
+            }
+            else if(currentGameState.OwnedLocations[i].Type == Building.BuildingType.Blacksmith)
+            {
+                writer.WriteLine("building_"+i.ToString() + " - Blacksmith");
+            }
+            else if(currentGameState.OwnedLocations[i].Type == Building.BuildingType.House)
+            {
+                writer.WriteLine("building_"+i.ToString() + " - house");
+            }
+            else if(currentGameState.OwnedLocations[i].Type == Building.BuildingType.Market_Stall)
+            {
+                writer.WriteLine("building_"+i.ToString() + " - Market_Stall");
+            }
+            else if(currentGameState.OwnedLocations[i].Type == Building.BuildingType.Mine)
+            {
+                writer.WriteLine("building_"+i.ToString() + " - Mine");
+            }
+            else if(currentGameState.OwnedLocations[i].Type == Building.BuildingType.Quarry)
+            {
+                writer.WriteLine("building_"+i.ToString() + " - Quarry");
+            }
+            else if(currentGameState.OwnedLocations[i].Type == Building.BuildingType.Sawmill)
+            {
+                writer.WriteLine("building_"+i.ToString() + " - Sawmill");
+            }
+            else if(currentGameState.OwnedLocations[i].Type == Building.BuildingType.School)
+            {
+                writer.WriteLine("building_"+i.ToString() + " - School");
+            }
+            else if(currentGameState.OwnedLocations[i].Type == Building.BuildingType.Smelter)
+            {
+                writer.WriteLine("building_"+i.ToString() + " - Smelter");
+            }
+            else if(currentGameState.OwnedLocations[i].Type == Building.BuildingType.Storage)
+            {
+                writer.WriteLine("building_"+i.ToString() + " - Storage");
+            }
+            else if(currentGameState.OwnedLocations[i].Type == Building.BuildingType.Turf_Hut)
+            {
+                writer.WriteLine("building_"+i.ToString() + " - turfhut");
+            }
 
         }
         writer.Write(")");
         writer.WriteLine("(:init ");
-        //here we loop through the initial state
-        for()
+        //here we loop through the initial state and set up the predicates such as which items are where
+        for (int i = 0; i < UsableVillagers.Count;i++)
         {
+            string skill = "";
+            string item = "";
+            writer.WriteLine(UsableVillagers[i].Key+" - person");
+            if (UsableVillagers[i].Value.Skill == Villager.Skills.Blacksmith)
+                skill = "BlacksmithS";
+            else if (UsableVillagers[i].Value.Skill == Villager.Skills.Carpenter)
+                skill = "Carpenter";
+            else if (UsableVillagers[i].Value.Skill == Villager.Skills.Labourer)
+                skill = "Labourer";
+            else if (UsableVillagers[i].Value.Skill == Villager.Skills.Lumberjack)
+                skill = "Lumberjack";
+            else if (UsableVillagers[i].Value.Skill == Villager.Skills.Miner)
+                skill = "Miner";
+            else if (UsableVillagers[i].Value.Skill == Villager.Skills.Rifleman)
+                skill = "Rifleman";
+            else if (UsableVillagers[i].Value.Skill == Villager.Skills.Trader)
+                skill = "Trader";
+            else
+                continue;
+            writer.WriteLine("(has-"+skill+" "+UsableVillagers[i].Key+")");
+            if(UsableVillagers[i].Value.Inventory == Villager.Items.Stone)
+                item = "Stone";
+            else if(UsableVillagers[i].Value.Inventory == Villager.Items.Wood)
+                item = "Wood";
+            else if(UsableVillagers[i].Value.Inventory == Villager.Items.Iron)
+                item = "Iron";
+            else if(UsableVillagers[i].Value.Inventory == Villager.Items.Timber)
+                item = "Timber";
+            else if(UsableVillagers[i].Value.Inventory == Villager.Items.Ore)
+                item = "Ore";
+            else if(UsableVillagers[i].Value.Inventory == Villager.Items.Coal)
+                item = "Coal";
+            else if(UsableVillagers[i].Value.Inventory == Villager.Items.Money)
+                item = "Money";
+            else if(UsableVillagers[i].Value.Inventory == Villager.Items.Goods)
+                item = "Goods";
+            else if(UsableVillagers[i].Value.Inventory == Villager.Items.Axe)
+                item = "Axe";
+            else if(UsableVillagers[i].Value.Inventory == Villager.Items.Cart)
+                item = "Cart";
+            else if(UsableVillagers[i].Value.Inventory == Villager.Items.Rifle)
+                item = "Rifle";
+            else
+                continue;
+
+            writer.WriteLine("(has-"+item+" "+UsableVillagers[i].Key+")");
+        }
+       
+        for (int i = 0; i < currentGameState.OwnedLocations.Count; i++)
+        {
+            foreach(var Item in currentGameState.OwnedLocations[i].Items)
+            {
+                string item;
+                if(Item == Villager.Items.Stone)
+                    item = "Stone";
+                else if(Item == Villager.Items.Wood)
+                    item = "Wood";
+                else if(Item == Villager.Items.Iron)
+                    item = "Iron";
+                else if(Item == Villager.Items.Timber)
+                    item = "Timber";
+                else if(Item == Villager.Items.Ore)
+                    item = "Ore";
+                else if(Item == Villager.Items.Coal)
+                    item = "Coal";
+                else if(Item == Villager.Items.Money)
+                    item = "Money";
+                else if(Item == Villager.Items.Goods)
+                    item = "Goods";
+                else if(Item == Villager.Items.Axe)
+                    item = "Axe";
+                else if(Item == Villager.Items.Cart)
+                    item = "Cart";
+                else if(Item == Villager.Items.Rifle)
+                    item = "Rifle";
+                else
+                    continue;
+                writer.WriteLine("(has-"+item+" "+"building_"+i.ToString()+")");
+            }
+
         }
         writer.Write(")");
         writer.WriteLine("(:goal ");
         //here we loop through the goal state
-        for()
-        {
+        writer.WriteLine("(and");
+        //for()
+        //{
 
-        }
+        //}
+        writer.Write(")");
         writer.Write(")");
         writer.Write(")");
         return true;
