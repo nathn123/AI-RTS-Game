@@ -88,7 +88,7 @@ public class TaskPlanning : MonoBehaviour {
                 return false;
         return true;
     }
-    public int RequestTask(Task newTask)
+    public int RequestTask(VillageManager.GoalState newTask)
     {
         // add the struct 
         // get the value added at and then return

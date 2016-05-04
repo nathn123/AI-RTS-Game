@@ -15,20 +15,22 @@ public class VillageManager : MonoBehaviour {
     List<Villager> Villagers;
     List<Building> Buildings;
     float starttime, allowedtime;
+    List<KeyValuePair<int,List<TaskPlanning.Task>>> Tasks;
 
     char[,] Map, AiMap;
 
     public enum GlobalObjectives
     {
-        IncreasePopulation,
-        IncreaseRawResources,
-        IncreaseAdvResources,
-        ScoutArea,
-        IncreaseHousing,
-        IncreaseEducation,
-        IncreaseMoney,
-        TradeResources,
-        GoToWar
+        IncreasePopulation, // Chosen when the number of labourers in less than 10 % pop increased untill labourers more than 25%
+        IncreaseRawResources, // chosen when No of resources is less than 10 x no of villagers 
+        IncreaseAdvResources, // chosen when rifles less than 2 x riflemen
+        ScoutArea, // only active after pop is more than 10 , then activated when ???????? probs not gonna add it
+        IncreaseHousing, // when villagers / 2 less than current number of houses 
+        IncreaseEducation, // when specialists are less than 10 % of pop
+        IncreaseMoney, // when No of resources is more than 20 x no of villagers
+        TradeResources, // kinda same as above might need rework ... will need rework
+        GoToWar, // not implementing yet
+        None 
     }
     public enum TaskObjectives
     {
@@ -58,13 +60,9 @@ public class VillageManager : MonoBehaviour {
         Explorer, // focus on exploration, possible trade or war
         Turtle // focus on Defence of home but not attack of others
     }
-
-    struct Plans
+    private struct ObjectiveTargets
     {
-        public List<List<Vector2>> Paths;
-        public List<Villager.Items> ItemsRequired;
-        public List<Villager.Skills> SkillsRequired; // .count = villagers required
-        public Villager.Actions TasktoBeCompleted;
+
     }
 	// Use this for initialization
 	void Start () {
@@ -84,10 +82,19 @@ public class VillageManager : MonoBehaviour {
 
         UpdateMap();
         starttime = Time.time;
-        // after each step  we need to do to ensure it runs quickly
+        // after each step  we need to do to ensure it has time availiable
         if (checktime())
             return; 
 
+        //do we have an objective set
+        if (CurrentObj == GlobalObjectives.None)
+            PickNewGlobalObjective();
+        if (checktime())
+            return;
+        // must have a global objective / now we need to set sub-objectives ????
+
+        if (ObjectiveCompleted())
+            CurrentObj = GlobalObjectives.None;
 	
 	}
         bool checktime()
@@ -120,6 +127,7 @@ public class VillageManager : MonoBehaviour {
         }
         TaskPlanner = new TaskPlanning();
         PathPlanner = new PathPlanning();
+        CurrentObj = GlobalObjectives.None;
         CurrentBias = bias;
         AiMap = AiMap_;
         Villagers = new List<Villager>();
@@ -142,6 +150,33 @@ public class VillageManager : MonoBehaviour {
                 }
             }
         }
+    }
+
+    void PassGoal(GoalState goal)
+    {
+        var taskID = TaskPlanner.RequestTask(goal);
+        KeyValuePair<int, List<TaskPlanning.Task>> newTask = new KeyValuePair<int, List<TaskPlanning.Task>>(taskID, null);
+        Tasks.Add(newTask);
+    }
+    void CheckRetrieveTask()
+    {
+        foreach(var Task in Tasks)
+        {
+            if (Task.Value == null)
+                if (TaskPlanner.TaskReady(Task.Key))
+                    Task = new KeyValuePair<int, List<TaskPlanning.Task>>(Task.Key, TaskPlanner.GetPlan(Task.Key));
+        }
+    }
+
+    void PickNewGlobalObjective()
+    {
+
+    }
+
+    bool ObjectiveCompleted()
+    {
+
+        return true;
     }
 
 }
