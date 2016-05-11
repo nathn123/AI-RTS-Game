@@ -17,6 +17,9 @@ public class Villager : MonoBehaviour {
     };
     public enum Actions
     {
+        Walk,
+        Pickup,
+        Putdown,
         Family,
         Family_House,
         Educate,
@@ -45,7 +48,8 @@ public class Villager : MonoBehaviour {
         Cart, // possible should be a special case as it allows more carry capacity
         Rifle,
         Money,
-        Goods
+        Goods,
+        Empty
 
     };
     public enum Map_Items

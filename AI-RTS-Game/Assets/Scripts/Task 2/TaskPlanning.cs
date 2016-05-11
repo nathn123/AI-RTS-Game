@@ -17,6 +17,7 @@ public class TaskPlanning : MonoBehaviour {
     List<string[]> TempPlanStorage;
     VillageManager.GameState currentGameState;
     List<KeyValuePair<string,Villager>> UsableVillagers;
+    List<Types> DomainTypes;
     public struct Task
     {
         public List<Villager.Items> ItemsRequired; // ref to the items helb by villagers in order of list below
@@ -34,6 +35,14 @@ public class TaskPlanning : MonoBehaviour {
         public List<int> PersonParams; // which parameters in the action denote a person
         public List<int> LocationParams; // which parameters in the action denote a location
         public List<int> ItemParams; // which paramenters in the action denote an item
+        //public Actions()
+        //{
+        //    PersonParams = new List<int>();
+        //    LocationParams = new List<int>();
+        //    ItemParams = new List<int>();
+        //    ActionType = Villager.Actions.Build;
+        //    ActionName = "-1";
+        //}
     }
     public struct Types
     {
@@ -45,14 +54,21 @@ public class TaskPlanning : MonoBehaviour {
     List<Actions> DomainActions;
 	// Use this for initialization
 	void Start () {
-        problemfileloc = @"problem";
-        domainfileloc = @"domain";
-        solutionfileloc = @"/scripts/PDDL/Solution.soln";
+        problemfileloc =Application.dataPath+ @"/scripts/PDDL/problem.pddl";
+        domainfileloc = Application.dataPath + @"/scripts/PDDL/domain.pddl";
+        solutionfileloc = Application.dataPath + @"/scripts/PDDL/Solution.soln";
+        GoalsToAcheive = new List<VillageManager.GoalState>();
+        TempPlanStorage = new List<string[]>();
+        Plans = new List<List<Task>>();
+        DomainTypes = new List<Types>();
+        DomainActions = new List<Actions>();
+        LoadDomain();
 	}
 	
 	// Update is called once per frame
 	void Update () {
         starttime = Time.time;
+        
         // after each step  we need to do to ensure it runs quickly
         if (TempPlanStorage != null)
             InterpretSolution();
@@ -235,7 +251,8 @@ public class TaskPlanning : MonoBehaviour {
         if (!File.Exists(domainfileloc))
             return false;
         //load types
-        var typeActions = File.ReadAllLines(domainfileloc).Where(s => s.Contains("(:types")).ToArray();
+        var typeActions = File.ReadAllLines(domainfileloc).Where(s => s.Contains(" - ")).ToArray();
+        UnityEngine.Debug.Log(typeActions.Count().ToString());
         for(int i = 0; i < typeActions.Count(); i++)
         {
             Types newType = new Types();
@@ -254,13 +271,68 @@ public class TaskPlanning : MonoBehaviour {
                 newType.PDDLType = typeActions[i].Split('-')[0];
                 newType.item = true;
             }
+            else
+                continue;
+            DomainTypes.Add(newType);
         }
         var domainActions = File.ReadAllLines(domainfileloc).Where(s => s.Contains("(:action")).ToArray();
-        for (int i = 1; i < domainActions.Count(); i++)
+        var domainParams = File.ReadAllLines(domainfileloc).Where(s => s.Contains(":parameters")).ToArray();
+        for (int i = 0; i < domainActions.Count(); i++)
         {
             Actions newAction = new Actions();
+            var test = Villager.Actions.Cut_Tree.ToString();
+            newAction.PersonParams = new List<int>();
+            newAction.LocationParams = new List<int>();
+            newAction.ItemParams = new List<int>();
             newAction.ActionName = domainActions[i].Split(' ')[1];
-            var paramline = domainActions[i].Split(':')[2];
+            if (Villager.Actions.Build.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Build;
+            else if (Villager.Actions.Buy_Sell.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Buy_Sell;
+            else if (Villager.Actions.Combat.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Combat;
+            else if (Villager.Actions.Cut_Tree.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Cut_Tree;
+            else if (Villager.Actions.Educate.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Educate;
+            else if (Villager.Actions.Educate_Barracks.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Educate_Barracks;
+            else if (Villager.Actions.Family.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Family;
+            else if (Villager.Actions.Family_House.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Family_House;
+            else if (Villager.Actions.Make_Tool.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Make_Tool;
+            else if (Villager.Actions.Mine.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Mine;
+            else if (Villager.Actions.Pickup.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Pickup;
+            else if (Villager.Actions.Putdown.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Putdown;
+            else if (Villager.Actions.Quarry.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Quarry;
+            else if (Villager.Actions.Saw_Wood.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Saw_Wood;
+            else if (Villager.Actions.Smelt.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Smelt;
+            else if (Villager.Actions.Store.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Store;
+            else if (Villager.Actions.Train.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Train;
+            else if (Villager.Actions.Walk.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Walk;
+
+            var paramline = domainParams[i].Split('?');
+            for (int j = 0; j < paramline.Count();j++)
+            {
+                if (paramline[j].Contains("person"))
+                    newAction.PersonParams.Add(j);
+                else if (paramline[j].Contains("location"))
+                    newAction.LocationParams.Add(j);
+                else if (paramline[j].Contains("item"))
+                    newAction.ItemParams.Add(j);
+            }
+            DomainActions.Add(newAction);
         }
             return true;
     }

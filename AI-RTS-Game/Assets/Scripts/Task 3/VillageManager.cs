@@ -9,17 +9,21 @@ public class VillageManager : MonoBehaviour {
 
     PathPlanning PathPlanner;
     TaskPlanning TaskPlanner;
-    public GlobalObjectives CurrentObj;
+    List<ObjectiveTasks> CurrentObj;
+    int MaxTasks = 10;
     public AI_Bias CurrentBias;
     bool Initialised;
     List<Villager> Villagers;
     List<Building> Buildings;
     float starttime, allowedtime;
-    List<KeyValuePair<int,List<TaskPlanning.Task>>> Tasks;
+    //List<> Tasks;
 
     char[,] Map, AiMap;
 
-    public enum GlobalObjectives
+    // rather than global objects, have a list of maximum concurrent tasks
+    // each task is deceided based upon certain conditions
+
+    public enum ObjectiveTypes
     {
         IncreasePopulation, // Chosen when the number of labourers in less than 10 % pop increased untill labourers more than 25%
         IncreaseRawResources, // chosen when No of resources is less than 10 x no of villagers 
@@ -46,9 +50,9 @@ public class VillageManager : MonoBehaviour {
     public struct GoalState
     {
         // what we want at the end
-        List<Building.BuildingType> NewBuildings;
-        List<Villager.Items> NewItems;
-        List<Villager.Skills> NewSkills;
+        public List<Building.BuildingType> NewBuildings;
+        public List<Villager.Items> NewItems;
+        public List<Villager.Skills> NewSkills;
         // only storing new values otherwise we would have to calculate the future gamestate too much effort
     }
     public enum AI_Bias
@@ -59,9 +63,15 @@ public class VillageManager : MonoBehaviour {
         Explorer, // focus on exploration, possible trade or war
         Turtle // focus on Defence of home but not attack of others
     }
-    private struct ObjectiveTargets
+    struct ObjectiveTasks
     {
-
+        public int TaskID;
+        public List<TaskPlanning.Task> Stepsneeded;
+        public ObjectiveTypes Type;
+        public void SetSteps(List<TaskPlanning.Task> newSteps)
+        {
+            Stepsneeded = newSteps;
+        }
     }
 	// Use this for initialization
 	void Start () {
@@ -86,15 +96,13 @@ public class VillageManager : MonoBehaviour {
             return; 
 
         //do we have an objective set
-        if (CurrentObj == GlobalObjectives.None)
-            PickNewGlobalObjective();
+        if (CurrentObj.Count < MaxTasks)
+            GenerateNewTask();
         if (checktime())
             return;
         // must have a global objective / now we need to set sub-objectives ????
 
-        if (ObjectiveCompleted())
-            CurrentObj = GlobalObjectives.None;
-	
+        ObjectiveCompleted();
 	}
         bool checktime()
     {
@@ -126,13 +134,14 @@ public class VillageManager : MonoBehaviour {
         }
         TaskPlanner = new TaskPlanning();
         PathPlanner = new PathPlanning();
-        CurrentObj = GlobalObjectives.None;
+        CurrentObj = new List<ObjectiveTasks>();
         CurrentBias = bias;
         AiMap = AiMap_;
         Villagers = new List<Villager>();
         
         Villagers.Add((GameObject.Instantiate(MaleVillager, new Vector3(StartingPos.x, StartingPos.y), Quaternion.identity) as GameObject).GetComponent<Villager>() );
         Villagers.Add( (GameObject.Instantiate(FemaleVillager, new Vector3(StartingPos.x, StartingPos.y), Quaternion.identity) as GameObject).GetComponent<Villager>());
+        Initialised = true;
     }
 
     void UpdateMap()
@@ -153,28 +162,203 @@ public class VillageManager : MonoBehaviour {
 
     void PassGoal(GoalState goal)
     {
-        var taskID = TaskPlanner.RequestTask(goal);
-        KeyValuePair<int, List<TaskPlanning.Task>> newTask = new KeyValuePair<int, List<TaskPlanning.Task>>(taskID, null);
-        Tasks.Add(newTask);
+        ObjectiveTasks newTask = new ObjectiveTasks();
+        newTask.TaskID = TaskPlanner.RequestTask(goal);
+        CurrentObj.Add(newTask);
     }
     void CheckRetrieveTask()
     {
-        for (int i = 0; i < Tasks.Count;i++ )
+        for (int i = 0; i < CurrentObj.Count; i++)
         {
-            if (Tasks[i].Value == null)
-                if (TaskPlanner.TaskReady(Tasks[i].Key))
-                    Tasks[i] = new KeyValuePair<int, List<TaskPlanning.Task>>(Tasks[i].Key, TaskPlanner.GetPlan(Tasks[i].Key));
+            if (CurrentObj[i].Stepsneeded == null)
+                if (TaskPlanner.TaskReady(CurrentObj[i].TaskID))
+                    CurrentObj[i].SetSteps(TaskPlanner.GetPlan(CurrentObj[i].TaskID));
         }
     }
 
-    void PickNewGlobalObjective()
+    void GenerateNewTask()
     {
 
+        int Pop = 0, RRes = 0, ARes = 0, Scout = 0, Hous = 0, Edu = 0, Money = 0, Trade = 0, War = 0;
+        // first we count the number of objectives already set with specific types, so we dont focus only on one type all the time
+        int ObjCap = Mathf.CeilToInt(MaxTasks *0.4f); // maximum of 40% of tasks dedicated to one objective type
+        foreach(var obj in CurrentObj)
+        {
+            if (obj.Type == ObjectiveTypes.GoToWar)
+                War++;
+            else if (obj.Type == ObjectiveTypes.IncreaseAdvResources)
+                ARes++;
+            else if (obj.Type == ObjectiveTypes.IncreaseEducation)
+                Edu++;
+            else if (obj.Type == ObjectiveTypes.IncreaseHousing)
+                Hous++;
+            else if (obj.Type == ObjectiveTypes.IncreaseMoney)
+                Money++;
+            else if (obj.Type == ObjectiveTypes.IncreasePopulation)
+                Pop++;
+            else if (obj.Type == ObjectiveTypes.IncreaseRawResources)
+                RRes++;
+            else if (obj.Type == ObjectiveTypes.ScoutArea)
+                Scout++;
+            else if (obj.Type == ObjectiveTypes.TradeResources)
+                Trade++;
+        }
+        // now we take stock of what we have, to deciede what we need
+        int TotPop = 0, Labs = 0, Rifle = 0, Trader = 0, BlacksP = 0, Mine = 0, Lumber = 0, Carp = 0,
+            Turf = 0, House = 0, Scho = 0, Barr = 0, Stora = 0, MineB = 0, Smelt = 0, Quar = 0, Saw = 0, BlacksB = 0, Mark = 0;
+        foreach(var villager in Villagers)
+        {
+            TotPop++; // total population
+            if (villager.Skill == Villager.Skills.Labourer)
+                Labs++;
+            else if (villager.Skill == Villager.Skills.Blacksmith)
+                BlacksP++;
+            else if (villager.Skill == Villager.Skills.Carpenter)
+                Carp++;
+            else if (villager.Skill == Villager.Skills.Lumberjack)
+                Lumber++;
+            else if (villager.Skill == Villager.Skills.Miner)
+                Mine++;
+            else if (villager.Skill == Villager.Skills.Rifleman)
+                Rifle++;
+            else if (villager.Skill == Villager.Skills.Trader)
+                Trader++;
+        }
+        foreach(var building in Buildings)
+        {
+            if (building.Type == Building.BuildingType.Barracks)
+                Barr++;
+            else if (building.Type == Building.BuildingType.Blacksmith)
+                BlacksB++;
+            else if (building.Type == Building.BuildingType.House)
+                House++;
+            else if (building.Type == Building.BuildingType.Market_Stall)
+                Mark++;
+            else if (building.Type == Building.BuildingType.Mine)
+                MineB++;
+            else if (building.Type == Building.BuildingType.Quarry)
+                Quar++;
+            else if (building.Type == Building.BuildingType.Sawmill)
+                Saw++;
+            else if (building.Type == Building.BuildingType.School)
+                Scho++;
+            else if (building.Type == Building.BuildingType.Smelter)
+                Smelt++;
+            else if (building.Type == Building.BuildingType.Storage)
+                Stora++;
+            else if (building.Type == Building.BuildingType.Turf_Hut)
+                Turf++;
+        }
+        // and finally we take stock of the items
+        int stone = 0 , wood = 0 , iron = 0 , timber = 0, ore = 0, coal = 0, axe = 0, cart = 0, RifleI = 0, MoneyI = 0, goods = 0;
+
+        foreach (var villager in Villagers)
+        {
+            if (villager.Inventory == Villager.Items.Axe)
+                axe++;
+            else if (villager.Inventory == Villager.Items.Cart)
+                cart++;
+            else if (villager.Inventory == Villager.Items.Coal)
+                coal++;
+            else if (villager.Inventory == Villager.Items.Goods)
+                goods++;
+            else if (villager.Inventory == Villager.Items.Iron)
+                iron++;
+            else if (villager.Inventory == Villager.Items.Money)
+                MoneyI++;
+            else if (villager.Inventory == Villager.Items.Ore)
+                ore++;
+            else if (villager.Inventory == Villager.Items.Rifle)
+                RifleI++;
+            else if (villager.Inventory == Villager.Items.Stone)
+                stone++;
+            else if (villager.Inventory == Villager.Items.Timber)
+                timber++;
+            else if (villager.Inventory == Villager.Items.Wood)
+                wood++;
+        }
+        foreach(var building in Buildings)
+        {
+            foreach(var item in building.Items)
+            {
+                if (item == Villager.Items.Axe)
+                    axe++;
+                else if (item == Villager.Items.Cart)
+                    cart++;
+                else if (item == Villager.Items.Coal)
+                    coal++;
+                else if (item == Villager.Items.Goods)
+                    goods++;
+                else if (item == Villager.Items.Iron)
+                    iron++;
+                else if (item == Villager.Items.Money)
+                    MoneyI++;
+                else if (item == Villager.Items.Ore)
+                    ore++;
+                else if (item == Villager.Items.Rifle)
+                    RifleI++;
+                else if (item == Villager.Items.Stone)
+                    stone++;
+                else if (item == Villager.Items.Timber)
+                    timber++;
+                else if (item == Villager.Items.Wood)
+                    wood++;
+            }
+        }
+        //IncreasePopulation, // Chosen when the number of labourers in less than 10 % pop increased untill labourers more than 25%
+        //IncreaseRawResources, // chosen when No of resources is less than 10 x no of villagers 
+        //IncreaseAdvResources, // chosen when rifles less than 2 x riflemen
+        //IncreaseHousing, // when villagers / 2 less than current number of houses 
+        //IncreaseEducation, // when specialists are less than 10 % of pop // not needed as pddl will educate as needed
+        //IncreaseMoney, // when No of resources is more than 20 x no of villagers
+        //TradeResources, // kinda same as above might need rework ... will need rework
+        //ScoutArea, // only active after pop is more than 10 , then activated when ???????? probs not gonna add it
+        //GoToWar, // not implementing yet
+        // now we are ready to gen the task
+        // order task are in order of which i believe are important
+        // continue to add tasks until the cap is reached
+
+        int noneselected = 1; // this var is added to combat infinite loops, will reduce the requirements to activate a task until a task is met
+        do
+        {
+            ObjectiveTasks newObjective = new ObjectiveTasks();
+            GoalState newGoal = new GoalState();
+            if(Labs < (TotPop *0.1f)/noneselected && Pop < ObjCap)
+            {
+                newObjective.Type = ObjectiveTypes.IncreasePopulation;
+                for (int i = 0; i < 5; i++)
+                    newGoal.NewSkills.Add(Villager.Skills.Labourer);
+                newObjective.TaskID = TaskPlanner.RequestTask(newGoal);
+                noneselected = 1;
+            }
+            else if (wood < 10 / noneselected || stone < 10 / noneselected)
+            {
+                newObjective.Type = ObjectiveTypes.IncreaseRawResources;
+                for (int i = 0; i < 5; i++)
+                {
+                    newGoal.NewItems.Add(Villager.Items.Wood);
+                    newGoal.NewItems.Add(Villager.Items.Stone);
+                }
+                newObjective.TaskID = TaskPlanner.RequestTask(newGoal);
+                noneselected = 1;
+            }
+            noneselected++;
+        } while (CurrentObj.Count < MaxTasks);
     }
 
-    bool ObjectiveCompleted()
+    void ObjectiveCompleted()
     {
-
+        for (int i = 0; i < CurrentObj.Count; i++)
+        {
+            if (ObjectiveCompleted(CurrentObj[i]))
+                CurrentObj.RemoveAt(i);
+        }
+    }
+    bool ObjectiveCompleted(ObjectiveTasks Current)
+    {
+        foreach (var steps in Current.Stepsneeded)
+            if (steps.complete != true)
+                return false;
         return true;
     }
 
