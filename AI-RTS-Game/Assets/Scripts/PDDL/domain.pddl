@@ -6,16 +6,15 @@
 	skill - object
 	location - object
 	item - object
-	building - location
-	turfhut - building
-	house - building
-	School - building
-    Barracks - building
-	Storage - building
-	Smelter - building
-	Sawmill - building
-	Blacksmith - building
-	Market_Stall - building
+	turfhut - location
+	house - location
+	School - location
+    Barracks - location
+	Storage - location
+	Smelter - location
+	Sawmill - location
+	Blacksmith - location
+	Market_Stall - location
 	Stone - item
 	Wood - item
 	Iron  - item

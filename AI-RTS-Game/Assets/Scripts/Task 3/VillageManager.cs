@@ -41,6 +41,7 @@ public class VillageManager : MonoBehaviour {
         // current state of game world // copy of the stored world state makes more sense
         public List<Villager> Villagers;
         public List<Building> OwnedLocations;
+        public List<Vector2> TreeLocations;
     }
     public struct GoalState
     {
@@ -50,8 +51,6 @@ public class VillageManager : MonoBehaviour {
         List<Villager.Skills> NewSkills;
         // only storing new values otherwise we would have to calculate the future gamestate too much effort
     }
-
-
     public enum AI_Bias
     {
         Balanced, // No bias
@@ -160,11 +159,11 @@ public class VillageManager : MonoBehaviour {
     }
     void CheckRetrieveTask()
     {
-        foreach(var Task in Tasks)
+        for (int i = 0; i < Tasks.Count;i++ )
         {
-            if (Task.Value == null)
-                if (TaskPlanner.TaskReady(Task.Key))
-                    Task = new KeyValuePair<int, List<TaskPlanning.Task>>(Task.Key, TaskPlanner.GetPlan(Task.Key));
+            if (Tasks[i].Value == null)
+                if (TaskPlanner.TaskReady(Tasks[i].Key))
+                    Tasks[i] = new KeyValuePair<int, List<TaskPlanning.Task>>(Tasks[i].Key, TaskPlanner.GetPlan(Tasks[i].Key));
         }
     }
 

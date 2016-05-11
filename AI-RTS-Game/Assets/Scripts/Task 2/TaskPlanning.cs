@@ -19,13 +19,30 @@ public class TaskPlanning : MonoBehaviour {
     List<KeyValuePair<string,Villager>> UsableVillagers;
     public struct Task
     {
-        public Villager.Items ItemsRequired;
-        public int villager; //ref to the villager value in state list
+        public List<Villager.Items> ItemsRequired; // ref to the items helb by villagers in order of list below
+        public List<Villager> villager; //ref to the villager or villagers performing the task
         public Villager.Actions Action;
         public Vector2 Start;
         public Vector2 Goal;
         public bool complete;
     }
+    public struct Actions
+    {
+        public string ActionName; // name of action i.e build move sell in pddl
+        public Villager.Actions ActionType; // action as denoted in code
+        // setup villager params and building params numerical order ?????????? or
+        public List<int> PersonParams; // which parameters in the action denote a person
+        public List<int> LocationParams; // which parameters in the action denote a location
+        public List<int> ItemParams; // which paramenters in the action denote an item
+    }
+    public struct Types
+    {
+        public string PDDLType;
+        public bool person;
+        public bool location ;
+        public bool item;
+    }
+    List<Actions> DomainActions;
 	// Use this for initialization
 	void Start () {
         problemfileloc = @"problem";
@@ -94,11 +111,84 @@ public class TaskPlanning : MonoBehaviour {
         // get the value added at and then return
         return 0;
     }
+    Villager FindVillager(string name)
+    {
+        foreach (var vill in UsableVillagers)
+            if (vill.Key == name)
+                return vill.Value;
+        return null;
+    }
+    Vector2 FindBuilding(string name)
+    {
+        
+        string prefix = name.Split('_')[0];
+        string suffix = name.Split('_')[1];
+        int num = int.Parse(suffix);
+        if (prefix == "building")
+            return currentGameState.OwnedLocations[num].Position;
+        else if (prefix == "tree")
+            return currentGameState.TreeLocations[num];
+
+        return new Vector2(float.MaxValue,float.MaxValue);
+    }
+    Villager.Items FindItems(string name)
+    {
+        Villager.Items returnval = Villager.Items.Axe;
+    if(name == "Stone")
+        returnval = Villager.Items.Stone;
+	else if(name == "Wood")
+        returnval = Villager.Items.Wood;
+	else if(name == "Iron")
+        returnval = Villager.Items.Iron;
+	else if(name == "Timber")
+        returnval = Villager.Items.Timber;
+	else if(name == "Ore")
+        returnval = Villager.Items.Ore;
+	else if(name == "Coal")
+        returnval = Villager.Items.Coal;
+	else if(name == "Money")
+        returnval = Villager.Items.Money;
+	else if(name == "Goods")
+        returnval = Villager.Items.Goods;
+	else if(name == "Axe")
+        returnval = Villager.Items.Axe;
+	else if(name == "Cart")
+        returnval = Villager.Items.Cart;
+	else if(name == "Rifle")
+        returnval = Villager.Items.Rifle;
+
+    return returnval;
+    }
     public void InterpretSolution()
     {
+        // here we interpret the actions and generate the tasks 
+        for (int i = 0; i < TempPlanStorage.Count;i++ ) // each string array is 1 action N params
+        {
+            Task newTask = new Task();
+            for (int j = 0; j < DomainActions.Count; j++)// if we first match to an action, we can limit the number of required searchs, i.e only search for buildings
+                if (TempPlanStorage[i][0] == DomainActions[j].ActionName)
+                {
+                    newTask.Action = DomainActions[j].ActionType;
+                    //1st we get the villagers involved
+                    foreach (int paramloc in DomainActions[j].PersonParams)
+                        newTask.villager.Add(FindVillager(TempPlanStorage[i][paramloc]));
+                    foreach (int paramloc in DomainActions[j].ItemParams)
+                        newTask.ItemsRequired.Add(FindItems(TempPlanStorage[i][paramloc]));
+                    if(DomainActions[j].LocationParams.Count > 1)
+                    {
+                        // is move too action
+                        newTask.Start = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]]);
+                        newTask.Goal = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[1]]);
+                        // otherwise goal is primary location
+                    }
+                    else
+                        newTask.Goal = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]]);
 
-        // at the end empty it
-        TempPlanStorage = null;
+                }
+
+        }
+            // at the end empty it
+            TempPlanStorage = null;
     }
     void RunPlan()
     {
@@ -142,8 +232,37 @@ public class TaskPlanning : MonoBehaviour {
     }
     bool LoadDomain()
     {
-        
-        return true;
+        if (!File.Exists(domainfileloc))
+            return false;
+        //load types
+        var typeActions = File.ReadAllLines(domainfileloc).Where(s => s.Contains("(:types")).ToArray();
+        for(int i = 0; i < typeActions.Count(); i++)
+        {
+            Types newType = new Types();
+            if (typeActions[i].Contains("person"))
+            {
+                newType.PDDLType = typeActions[i].Split('-')[0];
+                newType.person = true;
+            }
+            else if (typeActions[i].Contains("location"))
+            {
+                newType.PDDLType = typeActions[i].Split('-')[0];
+                newType.location = true;
+            }
+            else if (typeActions[i].Contains("item"))
+            {
+                newType.PDDLType = typeActions[i].Split('-')[0];
+                newType.item = true;
+            }
+        }
+        var domainActions = File.ReadAllLines(domainfileloc).Where(s => s.Contains("(:action")).ToArray();
+        for (int i = 1; i < domainActions.Count(); i++)
+        {
+            Actions newAction = new Actions();
+            newAction.ActionName = domainActions[i].Split(' ')[1];
+            var paramline = domainActions[i].Split(':')[2];
+        }
+            return true;
     }
     bool CreateProblem(VillageManager.GoalState Goal)
     {
