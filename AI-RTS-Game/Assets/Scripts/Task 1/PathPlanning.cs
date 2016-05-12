@@ -2,14 +2,15 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class PathPlanning : MonoBehaviour {
+public class PathPlanning {
 
     //struct with required path info
-    struct PathInfo
+    public struct PathInfo
     {
         public Vector2 Start;
         public Vector2 End;
         public List<Vector2> Path;
+        public bool Complete;
     }
 
     List<PathInfo> Paths;
@@ -19,26 +20,32 @@ public class PathPlanning : MonoBehaviour {
 	void Start () {
 	
 	}
+    public void Initialise()
+    {
+
+    }
 	
 	// Update is called once per frame
-	void Update () {
+	public void Update () {
 	
 	}
 
-    public List<Vector2> GetPath(int pathID)
+    public PathInfo GetPath(int pathID)
     {
-        return Paths[pathID].Path;
+        var temp = Paths[pathID];
+        return temp;
     }
     public bool PathReady(int pathID)
     {
         //case to check if path is done then return result
         // if struct is used for path info should be easy
-        return true;
+        return Paths[pathID].Complete;
     }
-    public int AddPath(Vector2 Start, Vector3 End)
+    public int AddPath(PathInfo newPath)
     {
         // add the struct 
         // get the value added at and then return
+        Paths.Add(newPath);
         return Paths.Count-1;
     }
 }

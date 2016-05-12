@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class VillageManager : MonoBehaviour {
+public class VillageManager {
 
     public GameObject MaleVillager;
     public GameObject FemaleVillager;
@@ -54,6 +54,24 @@ public class VillageManager : MonoBehaviour {
         public List<Villager.Items> NewItems;
         public List<Villager.Skills> NewSkills;
         // only storing new values otherwise we would have to calculate the future gamestate too much effort
+        public void AddNewSkills(Villager.Skills Skills)
+        {
+            if (NewSkills == null)
+                NewSkills = new List<Villager.Skills>();
+            NewSkills.Add(Skills);
+        }
+        public void AddNewItems(Villager.Items Items)
+        {
+            if (NewItems == null)
+                NewItems = new List<Villager.Items>();
+            NewItems.Add(Items);
+        }
+        public void AddNewBuildings(Building.BuildingType Buildings)
+        {
+            if (NewBuildings == null)
+                NewBuildings = new List<Building.BuildingType>();
+            NewBuildings.Add(Buildings);
+        }
     }
     public enum AI_Bias
     {
@@ -65,9 +83,10 @@ public class VillageManager : MonoBehaviour {
     }
     struct ObjectiveTasks
     {
-        public int TaskID;
+        public int TaskID, PathID;
         public List<TaskPlanning.Task> Stepsneeded;
         public ObjectiveTypes Type;
+        public bool complete;
         public void SetSteps(List<TaskPlanning.Task> newSteps)
         {
             Stepsneeded = newSteps;
@@ -79,7 +98,7 @@ public class VillageManager : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void Update () 
+	public void Update () 
     {
         // this should be for updating the state of the game in the eyes of the planner
         // do we implement fog of war ????
@@ -103,41 +122,48 @@ public class VillageManager : MonoBehaviour {
         // must have a global objective / now we need to set sub-objectives ????
 
         ObjectiveCompleted();
+        Debug.Log("Villager Manager run");
+        TaskPlanner.Update();
+        PathPlanner.Update();
 	}
         bool checktime()
     {
-        if (Time.time - starttime > allowedtime)
-            return true;
+        //if (Time.time - starttime > allowedtime)
+        //    return true;
+        //return false;
         return false;
     }
     public void Initialise(Vector2 StartingPos,int VillageNum,AI_Bias bias,ref char[,] AiMap_)
     {
-        if(VillageNum == 1)
+        if(VillageNum == 0)
         {
-            MaleVillager = Resources.Load<GameObject>("Characters/Prefabs/Male 1.prefab");
-            FemaleVillager = Resources.Load<GameObject>("Characters/Prefabs/Female 1.prefab");
+            MaleVillager = Resources.Load<GameObject>("Characters/Prefabs/Male 1");
+            FemaleVillager = Resources.Load<GameObject>("Characters/Prefabs/Female 1");
+        }
+        else if (VillageNum == 1)
+        {
+            MaleVillager = Resources.Load<GameObject>(Application.dataPath + "Characters/Prefabs/Male 2.prefab");
+            FemaleVillager = Resources.Load<GameObject>(Application.dataPath + "Characters/Prefabs/Female 2.prefab");
         }
         else if (VillageNum == 2)
         {
-            MaleVillager = Resources.Load<GameObject>("Characters/Prefabs/Male 2.prefab");
-            FemaleVillager = Resources.Load<GameObject>("Characters/Prefabs/Female 2.prefab");
+            MaleVillager = Resources.Load<GameObject>(Application.dataPath + "Characters/Prefabs/Male 3.prefab");
+            FemaleVillager = Resources.Load<GameObject>(Application.dataPath + "Characters/Prefabs/Female 3.prefab");
         }
         else if (VillageNum == 3)
         {
-            MaleVillager = Resources.Load<GameObject>("Characters/Prefabs/Male 3.prefab");
-            FemaleVillager = Resources.Load<GameObject>("Characters/Prefabs/Female 3.prefab");
-        }
-        else if (VillageNum == 4)
-        {
-            MaleVillager = Resources.Load<GameObject>("Characters/Prefabs/Male 4.prefab");
-            FemaleVillager = Resources.Load<GameObject>("Characters/Prefabs/Female 4.prefab");
+            MaleVillager = Resources.Load<GameObject>(Application.dataPath + "Characters/Prefabs/Male 4.prefab");
+            FemaleVillager = Resources.Load<GameObject>(Application.dataPath + "Characters/Prefabs/Female 4.prefab");
         }
         TaskPlanner = new TaskPlanning();
+        TaskPlanner.Initialise();
         PathPlanner = new PathPlanning();
+        PathPlanner.Initialise();
         CurrentObj = new List<ObjectiveTasks>();
         CurrentBias = bias;
         AiMap = AiMap_;
         Villagers = new List<Villager>();
+        Buildings = new List<Building>();
         
         Villagers.Add((GameObject.Instantiate(MaleVillager, new Vector3(StartingPos.x, StartingPos.y), Quaternion.identity) as GameObject).GetComponent<Villager>() );
         Villagers.Add( (GameObject.Instantiate(FemaleVillager, new Vector3(StartingPos.x, StartingPos.y), Quaternion.identity) as GameObject).GetComponent<Villager>());
@@ -163,14 +189,40 @@ public class VillageManager : MonoBehaviour {
     void PassGoal(GoalState goal)
     {
         ObjectiveTasks newTask = new ObjectiveTasks();
+        newTask.PathID = -1;
         newTask.TaskID = TaskPlanner.RequestTask(goal);
         CurrentObj.Add(newTask);
+    }
+    void RequestPath()
+    {
+        for (int i = 0; i < CurrentObj.Count; i++)
+        {
+            for(int j= 0; j < CurrentObj[i].Stepsneeded.Count;j++)
+            {
+                // check to see if path is needed
+                if (CurrentObj[i].Stepsneeded[j].PathID != -1)
+                    continue; // means a path has been asked for
+                if (CurrentObj[i].Stepsneeded[j].Path.Start.x == float.MaxValue)
+                    CurrentObj[i].Stepsneeded[j].SetComplete(true);
+                //add the path
+                CurrentObj[i].Stepsneeded[j].SetPathID(PathPlanner.AddPath(CurrentObj[i].Stepsneeded[j].Path));
+            }
+        }
     }
     void CheckRetrieveTask()
     {
         for (int i = 0; i < CurrentObj.Count; i++)
         {
-            if (CurrentObj[i].Stepsneeded == null)
+            if(CurrentObj[i].complete)
+            {
+                //task recieved we need to check for paths now
+                for(int j= 0; j < CurrentObj[i].Stepsneeded.Count; j++)
+                {
+                    if (PathPlanner.PathReady(CurrentObj[i].Stepsneeded[j].PathID))
+                        CurrentObj[i].Stepsneeded[j].SetPath( PathPlanner.GetPath(CurrentObj[i].Stepsneeded[j].PathID));
+                }
+            }
+            else if (CurrentObj[i].Stepsneeded == null)
                 if (TaskPlanner.TaskReady(CurrentObj[i].TaskID))
                     CurrentObj[i].SetSteps(TaskPlanner.GetPlan(CurrentObj[i].TaskID));
         }
@@ -327,23 +379,26 @@ public class VillageManager : MonoBehaviour {
             {
                 newObjective.Type = ObjectiveTypes.IncreasePopulation;
                 for (int i = 0; i < 5; i++)
-                    newGoal.NewSkills.Add(Villager.Skills.Labourer);
+                    newGoal.AddNewSkills(Villager.Skills.Labourer);
                 newObjective.TaskID = TaskPlanner.RequestTask(newGoal);
+                CurrentObj.Add(newObjective);
                 noneselected = 1;
             }
-            else if (wood < 10 / noneselected || stone < 10 / noneselected)
+            else if ((wood < 10 / noneselected || stone < 10 / noneselected)&&RRes < ObjCap)
             {
                 newObjective.Type = ObjectiveTypes.IncreaseRawResources;
                 for (int i = 0; i < 5; i++)
                 {
-                    newGoal.NewItems.Add(Villager.Items.Wood);
-                    newGoal.NewItems.Add(Villager.Items.Stone);
+                    newGoal.AddNewItems(Villager.Items.Wood);
+                    newGoal.AddNewItems(Villager.Items.Stone);
                 }
                 newObjective.TaskID = TaskPlanner.RequestTask(newGoal);
+                CurrentObj.Add(newObjective);
                 noneselected = 1;
             }
-            noneselected++;
-        } while (CurrentObj.Count < MaxTasks);
+            else
+                noneselected++;
+        } while (CurrentObj.Count < MaxTasks || noneselected == 20);
     }
 
     void ObjectiveCompleted()
@@ -356,6 +411,8 @@ public class VillageManager : MonoBehaviour {
     }
     bool ObjectiveCompleted(ObjectiveTasks Current)
     {
+        if (Current.Stepsneeded == null)
+            return false;
         foreach (var steps in Current.Stepsneeded)
             if (steps.complete != true)
                 return false;

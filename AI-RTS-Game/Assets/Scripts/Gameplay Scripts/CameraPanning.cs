@@ -21,7 +21,7 @@ public class CameraPanning : MonoBehaviour {
             cam.transform.position += new Vector3( -1 * MoveSpeed,0, 0);
         if (Input.GetKey(KeyCode.RightArrow))
             cam.transform.position += new Vector3(1 * MoveSpeed,0, 0);
-        if(Input.GetKey(KeyCode.KeypadMinus))
+        if (Input.GetKey(KeyCode.KeypadMinus) && cam.GetComponent<Camera>().orthographicSize > 1)
             cam.GetComponent<Camera>().orthographicSize--;
         if (Input.GetKey(KeyCode.KeypadPlus))
             cam.GetComponent<Camera>().orthographicSize++;

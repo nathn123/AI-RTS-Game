@@ -8,6 +8,7 @@ public class MapGen : MonoBehaviour {
 
 	// Use this for initialization
     public GameObject Walkable,Grass, Trees, Swamp, Water, OutOfBounds;
+    int tilesize = 32;
     char[,] AiMap;
     GameObject[,] GameMap;
 	public void Start () {
@@ -43,7 +44,7 @@ public class MapGen : MonoBehaviour {
            }
        }
        AiMap = FinalMap;
-       DrawMap(FinalMap, GameMap = CreateGrid(32, height, width));
+       DrawMap(FinalMap, GameMap = CreateGrid(tilesize, height, width));
     }
     public GameObject[,] CreateGrid(int TileSize, int height, int width)
     {
@@ -106,5 +107,14 @@ public class MapGen : MonoBehaviour {
     public void GetMap(ref char[,] map)
     {
         map = AiMap;
+    }
+
+    public Vector2 GetPosition(Vector2 position)
+    {
+        Vector2 returnvec;
+        //uses the relative pos coordinate of map tile, to the unity scale position
+        returnvec.x = position.x * tilesize;
+        returnvec.y = position.y * tilesize;
+        return returnvec;
     }
 }

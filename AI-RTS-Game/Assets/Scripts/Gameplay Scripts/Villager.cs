@@ -17,6 +17,7 @@ public class Villager : MonoBehaviour {
     };
     public enum Actions
     {
+        None,
         Walk,
         Pickup,
         Putdown,
@@ -70,7 +71,11 @@ public class Villager : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         Path = new List<Vector2>();
+        CurrentAction = Actions.None;
         Skill = Skills.Labourer;
+        Inventory = Items.Empty;
+        this.gameObject.transform.position = new Vector3(this.transform.position.x,this.transform.position.y,-2);
+        
 	}
 	
 	// Update is called once per frame

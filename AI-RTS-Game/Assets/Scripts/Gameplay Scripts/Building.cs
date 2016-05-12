@@ -25,6 +25,7 @@ public class Building : MonoBehaviour {
 	void Start () {
         Items = new List<Villager.Items>();
         Type = BuildingType.buildingSite;
+        this.gameObject.transform.position = new Vector3(this.transform.position.x, this.transform.position.y, 1);
 	
 	}
     public void Initialise(Vector2 Pos, List<Villager.Items> BuildingItems)

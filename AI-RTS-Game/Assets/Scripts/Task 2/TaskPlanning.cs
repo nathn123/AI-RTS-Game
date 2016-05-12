@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 
-public class TaskPlanning : MonoBehaviour {
+public class TaskPlanning  {
 
     List<List<Task>> Plans;
     List<VillageManager.GoalState> GoalsToAcheive;
@@ -20,12 +20,25 @@ public class TaskPlanning : MonoBehaviour {
     List<Types> DomainTypes;
     public struct Task
     {
-        public List<Villager.Items> ItemsRequired; // ref to the items helb by villagers in order of list below
+        public List<Villager.Items> ItemsRequired; // ref to the items held by villagers in order of list below
         public List<Villager> villager; //ref to the villager or villagers performing the task
         public Villager.Actions Action;
-        public Vector2 Start;
-        public Vector2 Goal;
+        public PathPlanning.PathInfo Path;
+        public int PathID;
         public bool complete;
+
+        public void SetPath(PathPlanning.PathInfo newPath)
+        {
+            Path = newPath;
+        }
+        public void SetPathID(int newID)
+        {
+            PathID = newID;
+        }
+        public void SetComplete(bool comp)
+        {
+            complete = comp;
+        }
     }
     public struct Actions
     {
@@ -35,14 +48,6 @@ public class TaskPlanning : MonoBehaviour {
         public List<int> PersonParams; // which parameters in the action denote a person
         public List<int> LocationParams; // which parameters in the action denote a location
         public List<int> ItemParams; // which paramenters in the action denote an item
-        //public Actions()
-        //{
-        //    PersonParams = new List<int>();
-        //    LocationParams = new List<int>();
-        //    ItemParams = new List<int>();
-        //    ActionType = Villager.Actions.Build;
-        //    ActionName = "-1";
-        //}
     }
     public struct Types
     {
@@ -53,7 +58,7 @@ public class TaskPlanning : MonoBehaviour {
     }
     List<Actions> DomainActions;
 	// Use this for initialization
-	void Start () {
+	public void Initialise () {
         problemfileloc =Application.dataPath+ @"/scripts/PDDL/problem.pddl";
         domainfileloc = Application.dataPath + @"/scripts/PDDL/domain.pddl";
         solutionfileloc = Application.dataPath + @"/scripts/PDDL/Solution.soln";
@@ -66,11 +71,11 @@ public class TaskPlanning : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void Update () {
+	public void Update () {
         starttime = Time.time;
         
         // after each step  we need to do to ensure it runs quickly
-        if (TempPlanStorage != null)
+        if (TempPlanStorage.Count != 0)
             InterpretSolution();
         if (checktime())
             return;
@@ -86,15 +91,15 @@ public class TaskPlanning : MonoBehaviour {
             InterpretSolution();
             if (checktime())
                 return;
-
         }
 	
 	}
     bool checktime()
     {
-        if (Time.time - starttime > allowedtime)
-            return true;
-        return false;
+        //if (Time.time - starttime > allowedtime)
+        //    return true;
+        //return false;
+        return true;
     }
     public void GetGameState(VillageManager.GameState State)
     {
@@ -123,9 +128,14 @@ public class TaskPlanning : MonoBehaviour {
     }
     public int RequestTask(VillageManager.GoalState newTask)
     {
+        List<Task> newTaskList = new List<Task>();
+        GoalsToAcheive.Add(newTask);
+        var intref = GoalsToAcheive.Count - 1;
+        Plans.Insert(intref, newTaskList);
+        
         // add the struct 
         // get the value added at and then return
-        return 0;
+        return intref;
     }
     Villager FindVillager(string name)
     {
@@ -193,12 +203,13 @@ public class TaskPlanning : MonoBehaviour {
                     if(DomainActions[j].LocationParams.Count > 1)
                     {
                         // is move too action
-                        newTask.Start = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]]);
-                        newTask.Goal = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[1]]);
+                        newTask.Path.Start = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]]);
+                        newTask.Path.End = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[1]]);
+                        newTask.Path.Complete = false;
                         // otherwise goal is primary location
                     }
                     else
-                        newTask.Goal = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]]);
+                        newTask.Path.End = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]]);
 
                 }
 
