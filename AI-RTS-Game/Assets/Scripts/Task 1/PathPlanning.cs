@@ -5,6 +5,7 @@ using System.Collections.Generic;
 public class PathPlanning {
 
     //struct with required path info
+    char[,] Map; // is stored as ref between all that read it to ensure that the latest copy is always avaliable
     public struct PathInfo
     {
         public Vector2 Start;
@@ -20,9 +21,9 @@ public class PathPlanning {
 	void Start () {
 	
 	}
-    public void Initialise()
+    public void Initialise(ref char[,]AIMAP)
     {
-
+        Map = AIMAP;
     }
 	
 	// Update is called once per frame
@@ -47,5 +48,16 @@ public class PathPlanning {
         // get the value added at and then return
         Paths.Add(newPath);
         return Paths.Count-1;
+    }
+    bool Walkable(char Loc)
+    {
+        if(Loc == '.' || Loc == 'G')
+        {
+            // walkable tile NOT GRASS
+            return true;
+        }
+        // EDIT THIS IF NEEDED
+        return false; 
+                    
     }
 }
