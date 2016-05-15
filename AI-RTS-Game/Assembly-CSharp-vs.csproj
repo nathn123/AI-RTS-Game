@@ -49,6 +49,8 @@
      <Compile Include="Assets\Scripts\Gameplay Scripts\Building.cs" />
      <Compile Include="Assets\Scripts\Gameplay Scripts\CameraPanning.cs" />
      <Compile Include="Assets\Scripts\Gameplay Scripts\MapGen.cs" />
+     <Compile Include="Assets\Scripts\Gameplay Scripts\Tree.cs" />
+     <Compile Include="Assets\Scripts\Gameplay Scripts\TreeManager.cs" />
      <Compile Include="Assets\Scripts\Gameplay Scripts\VillageGen.cs" />
      <Compile Include="Assets\Scripts\Gameplay Scripts\Villager.cs" />
      <Compile Include="Assets\Scripts\Task 1\Grid.cs" />
@@ -58,12 +60,11 @@
      <Compile Include="Assets\Scripts\Task 1\PathRequestManager.cs" />
      <Compile Include="Assets\Scripts\Task 1\Pathfinding.cs" />
      <Compile Include="Assets\Scripts\Task 1\Unit.cs" />
-     <Compile Include="Assets\Scripts\Task 2\TaskPlanner.cs" />
      <Compile Include="Assets\Scripts\Task 2\TaskPlanning.cs" />
      <Compile Include="Assets\Scripts\Task 3\VillageManager.cs" />
      <None Include="Assets\Scripts\PDDL\Depend.xml" />
-     <None Include="Assets\Characters\references.txt" />
-     <None Include="Assets\Terrain\Thanks.txt" />
+     <None Include="Assets\Resources\Characters\references.txt" />
+     <None Include="Assets\Resources\Terrain\Thanks.txt" />
  <Reference Include="UnityEngine.UI">
  <HintPath>E:/Program Files (x86)/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/4.6.9/Standalone/UnityEngine.UI.dll</HintPath>
  </Reference>

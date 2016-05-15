@@ -72,31 +72,31 @@ public class MapGen : MonoBehaviour {
                 switch (AiMap[i, j])
                 {
                     case '.':
-                        VisualMap[i, j] = GameObject.Instantiate(Walkable,new Vector3(i*0.32f,j*0.32f,0),Quaternion.identity) as GameObject;//sprite goes here
+                        VisualMap[i, j] = GameObject.Instantiate(Walkable,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
                         // walkable tile NOT GRASS
                         break;
                     case 'G':
-                         VisualMap[i, j] = GameObject.Instantiate(Grass,new Vector3(i*0.32f,j*0.32f,0),Quaternion.identity) as GameObject;//sprite goes here
+                         VisualMap[i, j] = GameObject.Instantiate(Grass,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
                         // walkable tile IS GRASS
                         break;
                     case '@':
-                         VisualMap[i, j] = GameObject.Instantiate(OutOfBounds,new Vector3(i*0.32f,j*0.32f,0),Quaternion.identity) as GameObject;//sprite goes here
+                         VisualMap[i, j] = GameObject.Instantiate(OutOfBounds,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
                         // OUT OF BOUNDS
                         break;
                     case 'O':
-                         VisualMap[i, j] = GameObject.Instantiate(OutOfBounds,new Vector3(i*0.32f,j*0.32f,0),Quaternion.identity) as GameObject;//sprite goes here
+                         VisualMap[i, j] = GameObject.Instantiate(OutOfBounds,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
                         // OUT OF BOUNDS
                         break;
                     case 'T':
-                         VisualMap[i, j] = GameObject.Instantiate(Trees,new Vector3(i*0.32f,j*0.32f,0),Quaternion.identity) as GameObject;//sprite goes here
+                         VisualMap[i, j] = GameObject.Instantiate(Trees,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
                         // TREES
                         break;
                     case 'S':
-                         VisualMap[i, j] = GameObject.Instantiate(Swamp,new Vector3(i*0.32f,j*0.32f,0),Quaternion.identity) as GameObject;//sprite goes here
+                         VisualMap[i, j] = GameObject.Instantiate(Swamp,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
                         // SWAMP
                         break;
                     case 'W':
-                         VisualMap[i, j] = GameObject.Instantiate(Water,new Vector3(i*0.32f,j*0.32f,0),Quaternion.identity) as GameObject;//sprite goes here
+                         VisualMap[i, j] = GameObject.Instantiate(Water,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
                         // WATER
                         break;
                 }
@@ -117,4 +117,6 @@ public class MapGen : MonoBehaviour {
         returnvec.y = position.y * tilesize;
         return returnvec;
     }
+
+
 }

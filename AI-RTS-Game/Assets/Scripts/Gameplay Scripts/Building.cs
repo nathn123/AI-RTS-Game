@@ -19,18 +19,19 @@ public class Building : MonoBehaviour {
         Market_Stall
     };
     public BuildingType Type;
-    public Vector2 Position;
+    public Vector2 Position, Dimensions;
     public List<Villager.Items> Items;
 	// Use this for initialization
 	void Start () {
         Items = new List<Villager.Items>();
         Type = BuildingType.buildingSite;
-        this.gameObject.transform.position = new Vector3(this.transform.position.x, this.transform.position.y, 1);
+        this.gameObject.transform.position = new Vector3(this.transform.position.x, this.transform.position.y, -1);
 	
 	}
-    public void Initialise(Vector2 Pos, List<Villager.Items> BuildingItems)
+    public void Initialise(Vector2 Pos,Vector2 Dims, List<Villager.Items> BuildingItems)
     {
         Position = Pos;
+        Dimensions = Dims;
         Items.AddRange(BuildingItems);
     }
 	
@@ -49,5 +50,78 @@ public class Building : MonoBehaviour {
     public void DropOff(Villager.Items item)
     {
         Items.Add(item);
+    }
+
+    public bool ReadyToBuild(Building.BuildingType Type)
+    {
+        if(Type == BuildingType.Barracks)
+        {
+            if (!Items.Contains(Villager.Items.Stone))
+                return false;
+            if (!Items.Contains(Villager.Items.Wood))
+                return false;
+            if (!Items.Contains(Villager.Items.Iron))
+                return false;
+            if (!Items.Contains(Villager.Items.Timber))
+                return false;
+        }
+        else if (Type == BuildingType.Turf_Hut || Type == BuildingType.Quarry)
+        {
+            return true;
+        }
+        else if (Type == BuildingType.House)
+        {
+            if (!Items.Contains(Villager.Items.Stone))
+                return false;
+            if (!Items.Contains(Villager.Items.Wood))
+                return false;
+        }
+        else if (Type == BuildingType.School)
+        {
+            if (!Items.Contains(Villager.Items.Stone))
+                return false;
+            if (!Items.Contains(Villager.Items.Wood))
+                return false;
+            if (!Items.Contains(Villager.Items.Iron))
+                return false;
+        }
+        else if (Type == BuildingType.Storage)
+        {
+            if (!Items.Contains(Villager.Items.Stone))
+                return false;
+            if (!Items.Contains(Villager.Items.Wood))
+                return false;
+        }
+        else if (Type == BuildingType.Mine)
+        {
+            if (!Items.Contains(Villager.Items.Wood))
+                return false;
+            if (!Items.Contains(Villager.Items.Iron))
+                return false;
+        }
+        else if (Type == BuildingType.Smelter)
+        {
+            if (!Items.Contains(Villager.Items.Stone))
+                return false;
+        }
+        else if (Type == BuildingType.Sawmill)
+        {
+            if (!Items.Contains(Villager.Items.Stone))
+                return false;
+            if (!Items.Contains(Villager.Items.Iron))
+                return false;
+            if (!Items.Contains(Villager.Items.Timber))
+                return false;
+        }
+        else if (Type == BuildingType.Blacksmith)
+        {
+            if (!Items.Contains(Villager.Items.Stone))
+                return false;
+            if (!Items.Contains(Villager.Items.Iron))
+                return false;
+            if (!Items.Contains(Villager.Items.Timber))
+                return false;
+        }
+        return true;
     }
 }
