@@ -18,7 +18,7 @@ public class VillageManager {
     List<Villager> Villagers;
     List<Building> Buildings;
     List<Villager> AvailableVillagers;
-
+    Vector2 StartingPos;
     float starttime, allowedtime;
     //List<> Tasks;
 
@@ -39,10 +39,6 @@ public class VillageManager {
         TradeResources, // kinda same as above might need rework ... will need rework
         GoToWar, // not implementing yet
         None 
-    }
-    public enum TaskObjectives
-    {
-
     }
     public struct GameState
     {
@@ -95,7 +91,9 @@ public class VillageManager {
         public bool complete;
         public void SetSteps(List<TaskPlanning.Task> newSteps)
         {
-            Stepsneeded = newSteps;
+            if (Stepsneeded == null)
+                Stepsneeded = new List<TaskPlanning.Task>();
+            Stepsneeded.AddRange( newSteps);
         }
     }
 	// Use this for initialization
@@ -141,7 +139,7 @@ public class VillageManager {
         //return false;
         return false;
     }
-    public void Initialise(Vector2 StartingPos,int VillageNum_,AI_Bias bias,TreeManager TreeMgr_,ref char[,] AiMap_)
+    public void Initialise(Vector2 StartingPos_,int VillageNum_,AI_Bias bias,TreeManager TreeMgr_,ref char[,] AiMap_)
     {
         if(VillageNum_ == 0)
         {
@@ -175,10 +173,11 @@ public class VillageManager {
         AvailableVillagers = new List<Villager>();
         Buildings = new List<Building>();
         TreeMgr = TreeMgr_;
-        Villagers.Add((GameObject.Instantiate(MaleVillager, new Vector3(StartingPos.x, StartingPos.y), Quaternion.identity) as GameObject).GetComponent<Villager>() );
-        Villagers.Add( (GameObject.Instantiate(FemaleVillager, new Vector3(StartingPos.x, StartingPos.y), Quaternion.identity) as GameObject).GetComponent<Villager>());
+        Villagers.Add((GameObject.Instantiate(MaleVillager, new Vector3(StartingPos_.x, StartingPos_.y), Quaternion.identity) as GameObject).GetComponent<Villager>() );
+        Villagers.Add( (GameObject.Instantiate(FemaleVillager, new Vector3(StartingPos_.x, StartingPos_.y), Quaternion.identity) as GameObject).GetComponent<Villager>());
+        StartingPos = StartingPos_;
         foreach (var vill in Villagers)
-            vill.Initialise();
+            vill.Initialise(StartingPos_);
         AvailableVillagers.AddRange(Villagers);
         Initialised = true;
     }
@@ -190,6 +189,7 @@ public class VillageManager {
         newTask.Type = Type;
         newTask.PathID = -1;
         newTask.TaskID = TaskPlanner.RequestTask(goal);
+        newTask.Stepsneeded = new List<TaskPlanning.Task>();
         Debug.Log("new task created Type : " + Type.ToString());
         CurrentObj.Add(newTask);
     }
@@ -205,9 +205,13 @@ public class VillageManager {
                 if (CurrentObj[i].Stepsneeded[j].PathID != -1)
                     continue; // means a path has been asked for
                 if (CurrentObj[i].Stepsneeded[j].Path.Start.x == float.MaxValue)
+                {
                     CurrentObj[i].Stepsneeded[j].SetComplete(true);
+                    continue;
+                }
                 //add the path
-                CurrentObj[i].Stepsneeded[j].SetPathID(PathPlanner.AddPath(CurrentObj[i].Stepsneeded[j].Path));
+                var test = PathPlanner.AddPath(CurrentObj[i].Stepsneeded[j].Path);
+                CurrentObj[i].Stepsneeded[j].SetPathID(test);
             }
         }
     }
@@ -215,7 +219,7 @@ public class VillageManager {
     {
         for (int i = 0; i < CurrentObj.Count; i++)
         {
-            if(CurrentObj[i].complete)
+            if(CurrentObj[i].Stepsneeded.Count > 0)
             {
                 //task recieved we need to check for paths now
                 for(int j= 0; j < CurrentObj[i].Stepsneeded.Count; j++)
@@ -224,7 +228,7 @@ public class VillageManager {
                         CurrentObj[i].Stepsneeded[j].SetPath( PathPlanner.GetPath(CurrentObj[i].Stepsneeded[j].PathID));
                 }
             }
-            else if (CurrentObj[i].Stepsneeded == null)
+            else if (CurrentObj[i].Stepsneeded.Count == 0)
                 if (TaskPlanner.TaskReady(CurrentObj[i].TaskID))
                     CurrentObj[i].SetSteps(TaskPlanner.GetPlan(CurrentObj[i].TaskID));
         }
@@ -286,7 +290,7 @@ public class VillageManager {
                 BlacksB++;
             else if (building.Type == Building.BuildingType.House)
                 House++;
-            else if (building.Type == Building.BuildingType.Market_Stall)
+            else if (building.Type == Building.BuildingType.Market)
                 Mark++;
             else if (building.Type == Building.BuildingType.Mine)
                 MineB++;
@@ -300,7 +304,7 @@ public class VillageManager {
                 Smelt++;
             else if (building.Type == Building.BuildingType.Storage)
                 Stora++;
-            else if (building.Type == Building.BuildingType.Turf_Hut)
+            else if (building.Type == Building.BuildingType.Turf)
                 Turf++;
         }
         // and finally we take stock of the items
@@ -419,8 +423,8 @@ public class VillageManager {
                 }
                 else // build turf
                 {
-                    newGoal.NewBuildings = Building.BuildingType.Turf_Hut;
-                    var building = GenerateBuildingSite(Building.BuildingType.Turf_Hut);
+                    newGoal.NewBuildings = Building.BuildingType.Turf;
+                    var building = GenerateBuildingSite(Building.BuildingType.Turf);
                     newGoal.Site = building;
                     NeededSkills.Add(Villager.Skills.Labourer);
                     Buildings.Add(building);
@@ -527,10 +531,10 @@ public class VillageManager {
                     }
                     else if (Mark < Mathf.CeilToInt(0.05f * TotPop))
                     {
-                        newGoal.NewBuildings = Building.BuildingType.Market_Stall;
+                        newGoal.NewBuildings = Building.BuildingType.Market;
                         NeededSkills.Add(Villager.Skills.Carpenter);
                         NeededSkills.Add(Villager.Skills.Lumberjack);
-                        var building = GenerateBuildingSite(Building.BuildingType.Market_Stall);
+                        var building = GenerateBuildingSite(Building.BuildingType.Market);
                         newGoal.Site = building;
                         Buildings.Add(building);
                         Spec++;
@@ -614,7 +618,7 @@ public class VillageManager {
         {
             dimensions = new Vector2(5, 5);
         }
-        else if (Type == Building.BuildingType.Turf_Hut || Type == Building.BuildingType.Smelter)
+        else if (Type == Building.BuildingType.Turf || Type == Building.BuildingType.Smelter)
         {
             dimensions = new Vector2(1,1);
         }
@@ -622,7 +626,7 @@ public class VillageManager {
         {
             dimensions = new Vector2(2, 3);
         }
-        else if (Type == Building.BuildingType.Mine || Type == Building.BuildingType.Quarry || Type == Building.BuildingType.Market_Stall)
+        else if (Type == Building.BuildingType.Mine || Type == Building.BuildingType.Quarry || Type == Building.BuildingType.Market)
         {
             dimensions = new Vector2(1, 1);
         }
@@ -636,10 +640,10 @@ public class VillageManager {
                 if (FoundPos)
                     break;
                 for (int j = -range; i < range; j++)
-                    if (CheckMapArea(new Vector2(i, j), dimensions))
+                    if (CheckMapArea(new Vector2(i, j) + StartingPos, dimensions))
                     {
                         FoundPos = true;
-                        NewPos = new Vector2(i, j);
+                        NewPos = new Vector2(i, j) + StartingPos;
                         break;
                     }
             }

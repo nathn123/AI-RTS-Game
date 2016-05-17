@@ -52,12 +52,10 @@
 		(is-Quarry ?l - location)
 		(is-Mine ?l - location)
 		(is-Tree ?l - location)
-
-;;		(my-new-pred ?a ?b ?c ?d - location ?e - person ?f - location)
    )
    
 	(:action Walk
-           :parameters (?p - person ?locfrom ?locto - location)
+           :parameters (?p - person ?locfrom - location ?locto - location)
            :precondition (at ?p ?locfrom)
            :effect (and(at ?p ?locto)(not (at ?p ?locfrom))))
 		   
@@ -199,22 +197,22 @@
            :precondition (and(at ?p ?l)(is-Mine ?l))
            :effect (has-Ore ?p))
 		   
-	(:action Make_Tool_Axe
+	(:action Make_Axe
            :parameters (?p - person ?l - location)
            :precondition (and (has-BlacksmithS ?p) (at ?p ?l)(is-Blacksmith ?l))
            :effect (has-Axe ?l))
 		   
-	(:action Make_Tool_Cart
+	(:action Make_Cart
            :parameters (?p - person ?l - location)
            :precondition (and (has-BlacksmithS ?p) (at ?p ?l)(is-Blacksmith ?l))
            :effect (has-Cart ?l))
 		   
-	(:action Make_Tool_Rifle
+	(:action Make_Rifle
            :parameters (?p - person ?l - location)
            :precondition (and (has-BlacksmithS ?p) (at ?p ?l)(is-Blacksmith ?l))
            :effect (has-Rifle ?l))
 		   
-   (:action Build_Turf
+	(:action Build_Turf
            :parameters (?p1 - person ?l - location)
            :precondition (and(at ?p1 ?l)(is-BuildingSite ?l))
            :effect (is-turfhut ?l))
@@ -258,6 +256,56 @@
            :parameters (?p1 - person ?l - location)
            :precondition (and (has-Wood ?l)(has-Carpenter ?p1)(is-BuildingSite ?l))
            :effect (is-Market_Stall ?l))
+	(:action Train_Rifleman
+           :parameters (?p1 - person ?p2 - person ?l - location)
+           :precondition (and (has-Labourer ?p2)(at ?p1 ?l)(at ?p2 ?l)(is-Barracks ?l))
+           :effect (and (has-Rifleman ?p2) (not(has-Labourer ?p2))))
+
+	(:action Train_Lumberjack
+           :parameters (?p1 - person ?p2 - person ?l - location)
+           :precondition (and (has-Labourer ?p2) (at ?p1 ?l)(at ?p2 ?l)(is-School ?l))
+           :effect (and (has-Lumberjack ?p2) (not(has-Labourer ?p2))))
+	(:action Educate_Lumberjack
+           :parameters (?p1 - person ?p2 - person)
+           :precondition (has-Labourer ?p2)
+           :effect (and (has-Lumberjack ?p2) (not(has-Labourer ?p2))))
+	(:action Train_Trader
+           :parameters (?p1 - person ?p2 - person ?l - location)
+           :precondition (and (has-Labourer ?p2) (at ?p1 ?l)(at ?p2 ?l)(is-School ?l))
+           :effect (and (has-Trader ?p2) (not(has-Labourer ?p2))))
+	(:action Educate_Trader
+           :parameters (?p1 - person ?p2 - person)
+           :precondition (has-Labourer ?p2)
+           :effect (and (has-Trader ?p2) (not(has-Labourer ?p2))))
+	(:action Train_BlacksmithS
+           :parameters (?p1 - person ?p2 - person ?l - location)
+           :precondition (and (has-Labourer ?p2) (at ?p1 ?l)(at ?p2 ?l)(is-School ?l))
+           :effect (and (has-BlacksmithS ?p2) (not(has-Labourer ?p2))))
+	(:action Educate_BlacksmithS
+           :parameters (?p1 - person ?p2 - person)
+           :precondition (has-Labourer ?p2)
+           :effect (and (has-BlacksmithS ?p2) (not(has-Labourer ?p2))))
+	(:action Train_Carpenter
+           :parameters (?p1 - person ?p2 - person ?l - location)
+           :precondition (and (has-Labourer ?p2) (at ?p1 ?l)(at ?p2 ?l)(is-School ?l))
+           :effect (and (has-Carpenter ?p2) (not(has-Labourer ?p2))))
+	(:action Educate_Carpenter
+           :parameters (?p1 - person ?p2 - person)
+           :precondition (has-Labourer ?p2)
+           :effect (and (has-Carpenter ?p2) (not(has-Labourer ?p2))))
+	(:action Train_Miner
+           :parameters (?p1 - person ?p2 - person ?l - location)
+           :precondition (and (has-Labourer ?p2) (at ?p1 ?l)(at ?p2 ?l)(is-School ?l))
+           :effect (and (has-Miner ?p2) (not(has-Labourer ?p2))))
+	(:action Educate_Miner
+           :parameters (?p1 - person ?p2 - person)
+           :precondition (has-Labourer ?p2)
+           :effect (and (has-Miner ?p2) (not(has-Labourer ?p2))))		   
+		   
+		   
+		   
+		   
+		   
 		   
 		   ;; ALL BELOW NEED COMPLETION
 		   
@@ -280,55 +328,7 @@
     ;;       :effect ())
 			
 ;; special cases build building train people
-   (:action Train_Rifleman
-           :parameters (?p1 - person ?p2 - person ?l - location)
-           :precondition (and (has-Labourer ?p2)(at ?p1 ?l)(at ?p2 ?l)(is-Barracks ?l))
-           :effect (and (has-Rifleman ?p2) (not(has-Labourer ?p2))))
-		   
-   (:action Train_Lumberjack
-           :parameters (?p1 - person ?p2 - person ?l - location)
-           :precondition (and (has-Labourer ?p2) (at ?p1 ?l)(at ?p2 ?l)(is-School ?l))
-           :effect (and (has-Lumberjack ?p2) (not(has-Labourer ?p2))))
-   (:action Educate_Lumberjack
-           :parameters (?p1 - person ?p2 - person)
-           :precondition (has-Labourer ?p2)
-           :effect (and (has-Lumberjack ?p2) (not(has-Labourer ?p2))))
-		   
-   (:action Train_Trader
-           :parameters (?p1 - person ?p2 - person ?l - location)
-           :precondition (and (has-Labourer ?p2) (at ?p1 ?l)(at ?p2 ?l)(is-School ?l))
-           :effect (and (has-Trader ?p2) (not(has-Labourer ?p2))))
-   (:action Educate_Trader
-           :parameters (?p1 - person ?p2 - person)
-           :precondition (has-Labourer ?p2)
-           :effect (and (has-Trader ?p2) (not(has-Labourer ?p2))))
-		   
-   (:action Train_BlacksmithS
-           :parameters (?p1 - person ?p2 - person ?l - location)
-           :precondition (and (has-Labourer ?p2) (at ?p1 ?l)(at ?p2 ?l)(is-School ?l))
-           :effect (and (has-BlacksmithS ?p2) (not(has-Labourer ?p2))))
-   (:action Educate_BlacksmithS
-           :parameters (?p1 - person ?p2 - person)
-           :precondition (has-Labourer ?p2)
-           :effect (and (has-BlacksmithS ?p2) (not(has-Labourer ?p2))))
-		   
-   (:action Train_Carpenter
-           :parameters (?p1 - person ?p2 - person ?l - location)
-           :precondition (and (has-Labourer ?p2) (at ?p1 ?l)(at ?p2 ?l)(is-School ?l))
-           :effect (and (has-Carpenter ?p2) (not(has-Labourer ?p2))))
-   (:action Educate_Carpenter
-           :parameters (?p1 - person ?p2 - person)
-           :precondition (has-Labourer ?p2)
-           :effect (and (has-Carpenter ?p2) (not(has-Labourer ?p2))))
-		   
-   (:action Train_Miner
-           :parameters (?p1 - person ?p2 - person ?l - location)
-           :precondition (and (has-Labourer ?p2) (at ?p1 ?l)(at ?p2 ?l)(is-School ?l))
-           :effect (and (has-Miner ?p2) (not(has-Labourer ?p2))))
-   (:action Educate_Miner
-           :parameters (?p1 - person ?p2 - person)
-           :precondition (has-Labourer ?p2)
-           :effect (and (has-Miner ?p2) (not(has-Labourer ?p2))))
+
 		   
 		   
 		   

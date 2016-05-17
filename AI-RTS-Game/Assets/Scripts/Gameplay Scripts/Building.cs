@@ -6,7 +6,7 @@ public class Building {
     public enum BuildingType
     {
         buildingSite,
-        Turf_Hut,
+        Turf,
         House,
         School,
         Barracks,
@@ -16,7 +16,7 @@ public class Building {
         Quarry,
         Sawmill,
         Blacksmith,
-        Market_Stall,
+        Market,
         None
     };
     public BuildingType Type;
@@ -62,7 +62,7 @@ public class Building {
             if (!Items.Contains(Villager.Items.Timber))
                 return false;
         }
-        else if (Type == BuildingType.Turf_Hut || Type == BuildingType.Quarry)
+        else if (Type == BuildingType.Turf || Type == BuildingType.Quarry)
         {
             return true;
         }

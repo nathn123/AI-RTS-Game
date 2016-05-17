@@ -17,14 +17,16 @@ public class TaskPlanning  {
     List<string[]> TempPlanStorage;
     //VillageManager.GameState currentGameState;
     List<Types> DomainTypes;
-    public struct Task
+    public class Task
     {
-        public List<Villager.Items> ItemsRequired; // ref to the items held by villagers in order of list below
+        public Villager.Items ItemRequired; // ref to the items held by villagers in order of list below
+        public Villager.Skills SkillToBeLearnt;
+        public Building.BuildingType ToBeBuilt;
         public List<Villager> villager; //ref to the villager or villagers performing the task
         public Villager.Actions Action;
         public PathPlanning.PathInfo Path;
-        public int PathID;
-        public bool complete;
+        public int PathID { get; set; }
+        public bool complete { get; set; }
 
         public void SetPath(PathPlanning.PathInfo newPath)
         {
@@ -43,6 +45,9 @@ public class TaskPlanning  {
     {
         public string ActionName; // name of action i.e build move sell in pddl
         public Villager.Actions ActionType; // action as denoted in code
+        public Villager.Items ItemType;
+        public Villager.Skills SkillType;
+        public Building.BuildingType BuildType;
         // setup villager params and building params numerical order ?????????? or
         public List<int> PersonParams; // which parameters in the action denote a person
         public List<int> LocationParams; // which parameters in the action denote a location
@@ -60,7 +65,7 @@ public class TaskPlanning  {
 	public void Initialise () {
         problemfileloc =Application.dataPath+ @"/scripts/PDDL/problem.pddl";
         domainfileloc = Application.dataPath + @"/scripts/PDDL/domain.pddl";
-        solutionfileloc = Application.dataPath + @"/scripts/PDDL/ffSolution.soln";
+        solutionfileloc = Application.dataPath + @"/scripts/PDDL/ffPSolution.soln";
         GoalsToAcheive = new List<VillageManager.GoalState>();
         TempPlanStorage = new List<string[]>();
         Plans = new List<List<Task>>();
@@ -85,9 +90,6 @@ public class TaskPlanning  {
             if (CreateProblem(GoalsToAcheive[i]))
                 RunPlan();
             LoadSolution(i);
-            if (checktime())
-                return;
-            InterpretSolution(GoalsToAcheive[TempPlanID]);
             if (checktime())
                 return;
         }
@@ -115,7 +117,16 @@ public class TaskPlanning  {
     //}
     public List<Task> GetPlan(int planID)
     {
-        return Plans[planID];
+        List<Task> OutTask = new List<Task>();
+        for (int i = 0; i < Plans[planID].Count;i++)
+        {
+            Task PreTask = new Task();
+            PreTask = Plans[planID][i];
+            PreTask.complete = false;
+            PreTask.PathID = -1;
+            OutTask.Add(PreTask);
+        }
+            return OutTask;
     }
     public bool TaskReady(int planID)
     {
@@ -139,22 +150,18 @@ public class TaskPlanning  {
     }
     Villager FindVillager(string name,VillageManager.GoalState Goal)
     {
-        string prefix = name.Split('_')[0];
-        string suffix = name.Split('_')[1];
-        int num = int.Parse(suffix);
-        return Goal.GameState.Villagers[num];
+        return Goal.GameState.Villagers[int.Parse(name.Split('_')[1])];
     }
     Vector2 FindBuilding(string name, VillageManager.GoalState Goal)
     {
         
-        string prefix = name.Split('_')[0];
-        string suffix = name.Split('_')[1];
-        int num = int.Parse(suffix);
-        if (prefix == "building")
-            return Goal.GameState.OwnedLocations[num].Position;
-        else if (prefix == "tree")
-            return Goal.GameState.Trees[num].Pos;
-        else if (name.Contains("buildingSite"))
+        if (name.Split('_')[0].Equals( "Start", System.StringComparison.InvariantCultureIgnoreCase))
+            return FindVillager(name, Goal).Position;
+        if (name.Split('_')[0].Equals( "building", System.StringComparison.InvariantCultureIgnoreCase))
+            return Goal.GameState.OwnedLocations[int.Parse(name.Split('_')[1])].Position;
+        else if (name.Split('_')[0].Equals( "tree", System.StringComparison.InvariantCultureIgnoreCase))
+            return Goal.GameState.Trees[int.Parse(name.Split('_')[1])].Pos;
+        else if (name.Split('_')[0].Equals( "buildingSite", System.StringComparison.InvariantCultureIgnoreCase))
             return Goal.Site.Position;
 
         return new Vector2(float.MaxValue,float.MaxValue);
@@ -195,30 +202,53 @@ public class TaskPlanning  {
         {
             Task newTask = new Task();
             for (int j = 0; j < DomainActions.Count; j++)// if we first match to an action, we can limit the number of required searchs, i.e only search for buildings
-                if (TempPlanStorage[i][0].Equals(DomainActions[j].ActionName, System.StringComparison.InvariantCultureIgnoreCase))
+            {
+                var action = TempPlanStorage[i][0].Split('_');
+                if (action[0].Equals(DomainActions[j].ActionName, System.StringComparison.InvariantCultureIgnoreCase))
                 {
+                    if(action.Length>1)
+                    {
+                        var test1 = !action[1].Equals(DomainActions[j].BuildType.ToString());
+                        var test2 = !action[1].Equals(DomainActions[j].ItemType.ToString(), System.StringComparison.InvariantCultureIgnoreCase);
+                        var test3 = !action[1].Equals(DomainActions[j].SkillType.ToString(), System.StringComparison.InvariantCultureIgnoreCase);
+                        var test4 = test1 && test2 && test3;
+                        if (!action[1].Equals(DomainActions[j].BuildType.ToString(), System.StringComparison.InvariantCultureIgnoreCase) &&
+                            !action[1].Equals(DomainActions[j].ItemType.ToString(), System.StringComparison.InvariantCultureIgnoreCase) &&
+                            !action[1].Equals(DomainActions[j].SkillType.ToString(), System.StringComparison.InvariantCultureIgnoreCase))
+                            continue;
+                    }
                     newTask.Action = DomainActions[j].ActionType;
                     //1st we get the villagers involved
+                    newTask.villager = new List<Villager>();
                     foreach (int paramloc in DomainActions[j].PersonParams)
                         newTask.villager.Add(FindVillager(TempPlanStorage[i][paramloc], Goal));
-                    foreach (int paramloc in DomainActions[j].ItemParams)
-                        newTask.ItemsRequired.Add(FindItems(TempPlanStorage[i][paramloc]));
-                    if(DomainActions[j].LocationParams.Count > 1)
+                    newTask.ItemRequired = DomainActions[j].ItemType;
+                    newTask.SkillToBeLearnt = DomainActions[j].SkillType;
+                    newTask.ToBeBuilt = DomainActions[j].BuildType;
+                    if (DomainActions[j].LocationParams.Count > 1)
                     {
                         // is move too action
+                        newTask.Path = new PathPlanning.PathInfo();
                         newTask.Path.Start = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]], Goal);
                         newTask.Path.End = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[1]], Goal);
                         newTask.Path.Complete = false;
                         // otherwise goal is primary location
                     }
                     else
+                    {
+                        newTask.Path.Start = new Vector2(float.MaxValue,float.MaxValue);
                         newTask.Path.End = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]], Goal);
+                    }
+                    newTask.complete = true;
 				TotalTasks.Add(newTask);
                 }
+            }
 
         }
             // at the end empty it
-            TempPlanStorage = null;
+
+        Plans[TempPlanID] = TotalTasks;
+        TempPlanStorage = null;
     }
     void RunPlan()
     {
@@ -300,8 +330,8 @@ public class TaskPlanning  {
                 continue;
             DomainTypes.Add(newType);
         }
-        var domainActions = File.ReadAllLines(domainfileloc).Where(s => s.Contains("(:action")).ToArray();
-        var domainParams = File.ReadAllLines(domainfileloc).Where(s => s.Contains(":parameters")).ToArray();
+        var domainActions = File.ReadAllLines(domainfileloc).Where(s => s.Contains("(:action") != s.Contains(";;")).ToArray();
+        var domainParams = File.ReadAllLines(domainfileloc).Where(s => s.Contains(":parameters") != s.Contains(";;")).ToArray();
         for (int i = 0; i < domainActions.Count(); i++)
         {
             Actions newAction = new Actions();
@@ -309,7 +339,10 @@ public class TaskPlanning  {
             newAction.PersonParams = new List<int>();
             newAction.LocationParams = new List<int>();
             newAction.ItemParams = new List<int>();
-            newAction.ActionName = domainActions[i].Split(' ')[1];
+            newAction.BuildType = Building.BuildingType.None;
+            newAction.ItemType = Villager.Items.Empty;
+            newAction.SkillType = Villager.Skills.Any;
+            newAction.ActionName = domainActions[i].Split(' ','_')[1];
             if (Villager.Actions.Build.ToString().Contains(newAction.ActionName))
                 newAction.ActionType = Villager.Actions.Build;
             else if (Villager.Actions.Buy_Sell.ToString().Contains(newAction.ActionName))
@@ -320,6 +353,8 @@ public class TaskPlanning  {
                 newAction.ActionType = Villager.Actions.Cut_Tree;
             else if (Villager.Actions.Educate.ToString().Contains(newAction.ActionName))
                 newAction.ActionType = Villager.Actions.Educate;
+            else if (Villager.Actions.Train.ToString().Contains(newAction.ActionName))
+                newAction.ActionType = Villager.Actions.Train;
             else if (Villager.Actions.Educate_Barracks.ToString().Contains(newAction.ActionName))
                 newAction.ActionType = Villager.Actions.Educate_Barracks;
             else if (Villager.Actions.Family.ToString().Contains(newAction.ActionName))
@@ -346,6 +381,67 @@ public class TaskPlanning  {
                 newAction.ActionType = Villager.Actions.Train;
             else if (Villager.Actions.Walk.ToString().Contains(newAction.ActionName))
                 newAction.ActionType = Villager.Actions.Walk;
+
+            if(domainActions[i].Split(' ','_').Length > 2) // if there is more to add , that means it needs to specify a skill / item / or building
+            {
+                string ActionExtra = domainActions[i].Split(' ','_')[2];
+                if (Villager.Skills.Blacksmith.ToString().Contains(ActionExtra))
+                    newAction.SkillType = Villager.Skills.Blacksmith;
+                else if (Villager.Skills.Carpenter.ToString().Contains(ActionExtra))
+                    newAction.SkillType = Villager.Skills.Carpenter;
+                else if (Villager.Skills.Lumberjack.ToString().Contains(ActionExtra))
+                    newAction.SkillType = Villager.Skills.Lumberjack;
+                else if (Villager.Skills.Miner.ToString().Contains(ActionExtra))
+                    newAction.SkillType = Villager.Skills.Miner;
+                else if (Villager.Skills.Rifleman.ToString().Contains(ActionExtra))
+                    newAction.SkillType = Villager.Skills.Rifleman;
+                else if (Villager.Skills.Trader.ToString().Contains(ActionExtra))
+                    newAction.SkillType = Villager.Skills.Trader;
+                else if (Villager.Items.Axe.ToString().Contains(ActionExtra))
+                    newAction.ItemType = Villager.Items.Axe;
+                else if (Villager.Items.Cart.ToString().Contains(ActionExtra))
+                    newAction.ItemType = Villager.Items.Cart;
+                else if (Villager.Items.Coal.ToString().Contains(ActionExtra))
+                    newAction.ItemType = Villager.Items.Coal;
+                else if (Villager.Items.Goods.ToString().Contains(ActionExtra))
+                    newAction.ItemType = Villager.Items.Goods;
+                else if (Villager.Items.Iron.ToString().Contains(ActionExtra))
+                    newAction.ItemType = Villager.Items.Iron;
+                else if (Villager.Items.Money.ToString().Contains(ActionExtra))
+                    newAction.ItemType = Villager.Items.Money;
+                else if (Villager.Items.Ore.ToString().Contains(ActionExtra))
+                    newAction.ItemType = Villager.Items.Ore;
+                else if (Villager.Items.Rifle.ToString().Contains(ActionExtra))
+                    newAction.ItemType = Villager.Items.Rifle;
+                else if (Villager.Items.Stone.ToString().Contains(ActionExtra))
+                    newAction.ItemType = Villager.Items.Stone;
+                else if (Villager.Items.Timber.ToString().Contains(ActionExtra))
+                    newAction.ItemType = Villager.Items.Timber;
+                else if (Villager.Items.Wood.ToString().Contains(ActionExtra))
+                    newAction.ItemType = Villager.Items.Wood;
+                else if (Building.BuildingType.Barracks.ToString().Contains(ActionExtra))
+                    newAction.BuildType = Building.BuildingType.Barracks;
+                else if (Building.BuildingType.Blacksmith.ToString().Contains(ActionExtra))
+                    newAction.BuildType = Building.BuildingType.Blacksmith;
+                else if (Building.BuildingType.House.ToString().Contains(ActionExtra))
+                    newAction.BuildType = Building.BuildingType.House;
+                else if (Building.BuildingType.Market.ToString().Contains(ActionExtra))
+                    newAction.BuildType = Building.BuildingType.Market;
+                else if (Building.BuildingType.Mine.ToString().Contains(ActionExtra))
+                    newAction.BuildType = Building.BuildingType.Mine;
+                else if (Building.BuildingType.Quarry.ToString().Contains(ActionExtra))
+                    newAction.BuildType = Building.BuildingType.Quarry;
+                else if (Building.BuildingType.Sawmill.ToString().Contains(ActionExtra))
+                    newAction.BuildType = Building.BuildingType.Sawmill;
+                else if (Building.BuildingType.School.ToString().Contains(ActionExtra))
+                    newAction.BuildType = Building.BuildingType.School;
+                else if (Building.BuildingType.Smelter.ToString().Contains(ActionExtra))
+                    newAction.BuildType = Building.BuildingType.Smelter;
+                else if (Building.BuildingType.Storage.ToString().Contains(ActionExtra))
+                    newAction.BuildType = Building.BuildingType.Storage;
+                else if (Building.BuildingType.Turf.ToString().Contains(ActionExtra))
+                    newAction.BuildType = Building.BuildingType.Turf;
+            }
 
             var paramline = domainParams[i].Split('?');
             for (int j = 0; j < paramline.Count();j++)
@@ -450,7 +546,7 @@ public class TaskPlanning  {
                 location = "Blacksmith";
             else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.House)
                 location = "house";
-            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Market_Stall)
+            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Market)
                 location = "Market_Stall";
             else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Mine)
                 location = "Mine";
@@ -464,7 +560,7 @@ public class TaskPlanning  {
                 location = "Smelter";
             else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Storage)
                 location = "Storage";
-            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Turf_Hut)
+            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Turf)
                 location = "turfhut";
             else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.buildingSite)
                 continue;
@@ -515,7 +611,7 @@ public class TaskPlanning  {
             {
                 writer.WriteLine("(is-Barracks buildingSite)");
             }
-            else if (Goal.NewBuildings == Building.BuildingType.Turf_Hut)
+            else if (Goal.NewBuildings == Building.BuildingType.Turf)
             {
                 writer.WriteLine("(is-turfhut buildingSite)");
             }

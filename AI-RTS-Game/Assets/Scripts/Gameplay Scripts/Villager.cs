@@ -75,13 +75,13 @@ public class Villager : MonoBehaviour {
 
         
 	}
-    public void Initialise()
+    public void Initialise(Vector2 Pos)
     {
         Path = new List<Vector2>();
         CurrentAction = Actions.None;
         Skill = Skills.Labourer;
         Inventory = Items.Empty;
-        this.gameObject.transform.position = new Vector3(this.transform.position.x, this.transform.position.y, -2);
+        Position = Pos;
         Initialised = true;
     }
 	
@@ -89,7 +89,7 @@ public class Villager : MonoBehaviour {
 	void Update () 
     {
         if (!Initialised)
-            Initialise();
+            return;
         // if it has a path it should move
         if (Path.Count > 0)
             Move();
@@ -154,7 +154,7 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Buy_Sell && ActionComplete == false)
         {
             // first check that square is correct
-            if (!CheckMap(Building.BuildingType.Market_Stall, Position))
+            if (!CheckMap(Building.BuildingType.Market, Position))
                 return; // if the building required doesnt exist then return
             // second check the required people are here
             //third check the required resources are here
@@ -194,7 +194,7 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Family && ActionComplete == false)
         {
             // first check that square is correct
-            if (!CheckMap(Building.BuildingType.Turf_Hut, Position))
+            if (!CheckMap(Building.BuildingType.Turf, Position))
                 return; // if the building required doesnt exist then return
             // second check the required people are here
             //third check the required resources are here
@@ -307,7 +307,7 @@ public class Villager : MonoBehaviour {
             return true;
         if (Check == Building.BuildingType.House && map[(int)pos.x, (int)pos.y] == 'H')
             return true;
-        if (Check == Building.BuildingType.Market_Stall && map[(int)pos.x, (int)pos.y] == 'M')
+        if (Check == Building.BuildingType.Market && map[(int)pos.x, (int)pos.y] == 'M')
             return true;
         if (Check == Building.BuildingType.Mine && map[(int)pos.x, (int)pos.y] == 'N')
             return true;
@@ -321,7 +321,7 @@ public class Villager : MonoBehaviour {
             return true;
         if (Check == Building.BuildingType.Storage && map[(int)pos.x, (int)pos.y] == 'T')
             return true;
-        if (Check == Building.BuildingType.Turf_Hut && map[(int)pos.x, (int)pos.y] == 'U')
+        if (Check == Building.BuildingType.Turf && map[(int)pos.x, (int)pos.y] == 'U')
             return true;
 
         return false;

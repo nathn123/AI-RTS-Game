@@ -37,7 +37,6 @@ public class MapGen : MonoBehaviour {
        for (int i = 0; i < height; ++i)
        {
            mapline = Mapreader.ReadLine().ToCharArray();
-           print(mapline.Length);
            for (int j = 0; j < width; ++j)
            {
                FinalMap[i, j] = mapline[j];
@@ -111,11 +110,8 @@ public class MapGen : MonoBehaviour {
 
     public Vector2 GetPosition(Vector2 position)
     {
-        Vector2 returnvec;
         //uses the relative pos coordinate of map tile, to the unity scale position
-        returnvec.x = position.x * tilesize;
-        returnvec.y = position.y * tilesize;
-        return returnvec;
+        return GameMap[(int)position.x, (int)position.y].transform.position;
     }
 
 

@@ -14,6 +14,12 @@ public class PathPlanning
         public Vector2 End;
         public List<Vector2> Path;
         public bool Complete;
+
+        public void SetPath(List<Vector2> NewPath)
+        {
+            Path = NewPath;
+            Complete = true;
+        }
     }
     public struct Node
     {
@@ -39,12 +45,15 @@ public class PathPlanning
     public void Initialise(ref char[,] AIMAP)
     {
         Map = AIMAP;
+        Paths = new List<PathInfo>();
     }
 
     // Update is called once per frame
     public void Update()
     {
-
+        for (int i = 0; i < Paths.Count; i++)
+            if (!Paths[i].Complete)
+                StartPathPlanning(i);
     }
 
     public PathInfo GetPath(int pathID)
@@ -65,8 +74,13 @@ public class PathPlanning
         Paths.Add(newPath);
         return Paths.Count - 1;
     }
-    bool Walkable(char Loc)
+    static bool Walkable(char[,] map, Vector2 Pos)
     {
+        if (Pos.x > map.Length || Pos.y > map.Length)
+            return false;
+        if (Pos.x < 0 || Pos.y < 0)
+            return false;
+        char Loc = map[(int)Pos.x, (int)Pos.y];
         if (Loc == '.' || Loc == 'G')
         {
             // walkable tile NOT GRASS
@@ -81,16 +95,16 @@ public class PathPlanning
         List<Node> NewNodes = new List<Node>();
         Node Best = new Node(), Top = new Node(), Left = new Node(), Bot = new Node(), Right = new Node();
         // first gen ne nodes possible
-        if (Walkable(Map[(int)NewNodeStart.Pos.x, (int)NewNodeStart.Pos.y + 1]))
+        if (Walkable(Map,new Vector2(NewNodeStart.Pos.x,NewNodeStart.Pos.y + 1)))
             Top.Pos = new Vector2(NewNodeStart.Pos.x, NewNodeStart.Pos.y + 1);
 
-        if (Walkable(Map[(int)NewNodeStart.Pos.x, (int)NewNodeStart.Pos.y - 1]))
+        if (Walkable(Map, new Vector2(NewNodeStart.Pos.x,NewNodeStart.Pos.y - 1)))
             Bot.Pos = new Vector2(NewNodeStart.Pos.x, NewNodeStart.Pos.y - 1);
 
-        if (Walkable(Map[(int)NewNodeStart.Pos.x - 1, (int)NewNodeStart.Pos.y]))
+        if (Walkable(Map,new Vector2(NewNodeStart.Pos.x - 1,NewNodeStart.Pos.y)))
             Left.Pos = new Vector2(NewNodeStart.Pos.x - 1, NewNodeStart.Pos.y);
 
-        if (Walkable(Map[(int)NewNodeStart.Pos.x + 1, (int)NewNodeStart.Pos.y]))
+        if (Walkable(Map,new Vector2(NewNodeStart.Pos.x + 1,NewNodeStart.Pos.y)))
             Right.Pos = new Vector2(NewNodeStart.Pos.x + 1, NewNodeStart.Pos.y);
         Top.dist = CalculateHValue(Top, Goal);
         Bot.dist = CalculateHValue(Bot, Goal);
@@ -169,7 +183,7 @@ public class PathPlanning
         CurrentNode = GenerateNewNodes(NewNode, PrevNodes, Goal);
         if (CurrentNode.Pos != Goal)
         {
-            if (Search(Goal, NewNode, ref PrevNodes))
+            if (Search(Goal, CurrentNode, ref PrevNodes))
                 return true;
         }
         else
@@ -178,5 +192,25 @@ public class PathPlanning
             return true;
         }
         return false;
+    }
+
+    void StartPathPlanning(int PathID)
+    {
+        
+        // first we create a starting node
+        Node Start = new Node();
+        List<Node> NodePaths = new List<Node>();
+        Start.parent = -1;
+        Start.Pos = Paths[PathID].Start;
+        if (Search(Paths[PathID].End, Start, ref NodePaths))
+            Paths[PathID].SetPath(NodesToPos(NodePaths));
+    }
+    List<Vector2> NodesToPos(List<Node> Nodes)
+    {
+        List<Vector2> Positions = new List<Vector2>();
+
+        for (int i = 0; i < Nodes.Count; i++)
+            Positions.Add(Nodes[i].Pos);
+            return Positions;
     }
 }
