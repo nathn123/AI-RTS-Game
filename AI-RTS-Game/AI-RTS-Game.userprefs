@@ -1,13 +1,33 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.Default" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Gameplay Scripts\Villager.cs">
+  <MonoDevelop.Ide.Workspace />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Task 3\VillageManager.cs">
     <Files>
-      <File FileName="Assets\Scripts\Task 2\TaskPlanning.cs" Line="26" Column="15" />
-      <File FileName="Assets\Scripts\Gameplay Scripts\Villager.cs" Line="10" Column="1" />
+      <File FileName="Assets\Scripts\Task 2\TaskPlanning.cs" Line="132" Column="1" />
+      <File FileName="Assets\Scripts\Gameplay Scripts\VillageGen.cs" Line="38" Column="1" />
+      <File FileName="Assets\Scripts\Task 3\VillageManager.cs" Line="22" Column="34" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
+    <BreakpointStore>
+      <Breakpoint file="C:\Users\m2087350\Desktop\AI -RTS\trunk\AI-RTS-Game\Assets\Scripts\Task 2\TaskPlanning.cs" line="221" />
+      <Breakpoint file="C:\Users\m2087350\Desktop\AI -RTS\trunk\AI-RTS-Game\Assets\Scripts\Task 2\TaskPlanning.cs" line="272" />
+      <Breakpoint file="C:\Users\m2087350\Desktop\AI -RTS\trunk\AI-RTS-Game\Assets\Scripts\Task 2\TaskPlanning.cs" line="216" />
+      <Breakpoint file="C:\Users\m2087350\Desktop\AI -RTS\trunk\AI-RTS-Game\Assets\Scripts\Task 2\TaskPlanning.cs" line="193" />
+      <Breakpoint file="C:\Users\m2087350\Desktop\AI -RTS\trunk\AI-RTS-Game\Assets\Scripts\Task 2\TaskPlanning.cs" line="200" />
+      <Breakpoint file="C:\Users\m2087350\Desktop\AI -RTS\trunk\AI-RTS-Game\Assets\Scripts\Task 2\TaskPlanning.cs" line="202" />
+      <Breakpoint file="C:\Users\m2087350\Desktop\AI -RTS\trunk\AI-RTS-Game\Assets\Scripts\Task 2\TaskPlanning.cs" line="143" />
+      <Breakpoint file="C:\Users\m2087350\Desktop\AI -RTS\trunk\AI-RTS-Game\Assets\Scripts\Task 2\TaskPlanning.cs" line="144" />
+      <Breakpoint file="C:\Users\m2087350\Desktop\AI -RTS\trunk\AI-RTS-Game\Assets\Scripts\Task 2\TaskPlanning.cs" line="145" />
+      <Breakpoint file="C:\Users\m2087350\Desktop\AI -RTS\trunk\AI-RTS-Game\Assets\Scripts\Task 2\TaskPlanning.cs" line="204" />
+      <Breakpoint file="C:\Users\m2087350\Desktop\AI -RTS\trunk\AI-RTS-Game\Assets\Scripts\Task 2\TaskPlanning.cs" line="132" />
+      <Breakpoint file="C:\Users\m2087350\Desktop\AI -RTS\trunk\AI-RTS-Game\Assets\Scripts\Task 3\VillageManager.cs" line="189" />
+    </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
-  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches>
+    <Watch file="Assets\Scripts\Task 2\TaskPlanning.cs" line="194" offsetX="829" offsetY="3281" expression="TempPlanStorage" liveUpdate="False" />
+    <Watch file="Assets\Scripts\Task 2\TaskPlanning.cs" line="254" offsetX="1029" offsetY="4195" expression="actionline" liveUpdate="False" />
+    <Watch file="Assets\Scripts\Task 2\TaskPlanning.cs" line="254" offsetX="886" offsetY="4278" expression="i" liveUpdate="False" />
+    <Watch file="Assets\Scripts\Task 3\VillageManager.cs" line="570" offsetX="703" offsetY="9629" expression="State.Villagers" liveUpdate="False" />
+    <Watch file="Assets\Scripts\Task 3\VillageManager.cs" line="567" offsetX="720" offsetY="9691" expression="AvailableVillagers" liveUpdate="False" />
+  </MonoDevelop.Ide.DebuggingService.PinnedWatches>
 </Properties>

@@ -1,6 +1,7 @@
 ; Time 0.00
 ; ParsingTime
-; NrActions 1
-; MakeSpan 1
+; NrActions 2
+; MakeSpan 2
 ; MetricValue 
-0: (EDUCATE_LUMBERJACK VILLAGER_1 VILLAGER_0 ) [1]
+0: (WALK VILLAGER_0 START_0 BUILDINGSITE ) [1]
+1: (BUILD_TURF VILLAGER_0 BUILDINGSITE ) [1]

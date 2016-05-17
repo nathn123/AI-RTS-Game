@@ -2,8 +2,26 @@
 <Durative-FF-Depend>
 <Operator>
 <Name>
-(EDUCATE_LUMBERJACK VILLAGER_1 VILLAGER_0)</Name>
+(WALK VILLAGER_0 START_0 BUILDINGSITE)</Name>
 
+</Operator>
+
+<Operator>
+<Name>
+(BUILD_TURF VILLAGER_0 BUILDINGSITE)</Name>
+
+<Depend>
+ 
+<On_Operator>
+ 
+<Name>
+(WALK VILLAGER_0 START_0 BUILDINGSITE)
+</Name>
+
+</On_Operator>
+ 
+</Depend>
+ 
 </Operator>
 
 

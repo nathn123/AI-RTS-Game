@@ -60,7 +60,7 @@ public class TaskPlanning  {
 	public void Initialise () {
         problemfileloc =Application.dataPath+ @"/scripts/PDDL/problem.pddl";
         domainfileloc = Application.dataPath + @"/scripts/PDDL/domain.pddl";
-        solutionfileloc = Application.dataPath + @"/scripts/PDDL/Solution.soln";
+        solutionfileloc = Application.dataPath + @"/scripts/PDDL/ffSolution.soln";
         GoalsToAcheive = new List<VillageManager.GoalState>();
         TempPlanStorage = new List<string[]>();
         Plans = new List<List<Task>>();
@@ -74,10 +74,10 @@ public class TaskPlanning  {
         starttime = Time.time;
         
         // after each step  we need to do to ensure it runs quickly
-        if (TempPlanStorage.Count != 0)
-            InterpretSolution(GoalsToAcheive[TempPlanID]);
-        if (checktime())
-            return;
+        //if (TempPlanStorage != null)
+        //    InterpretSolution(GoalsToAcheive[TempPlanID]);
+        //if (checktime())
+        //    return;
         //check plans that need to be completed
         for (int i = 0; i < GoalsToAcheive.Count;++i)
         {
@@ -189,12 +189,13 @@ public class TaskPlanning  {
     }
     public void InterpretSolution(VillageManager.GoalState Goal)
     {
-        // here we interpret the actions and generate the tasks 
+        // here we interpret the actions and generate the tasks
+		List<Task> TotalTasks = new List<Task> ();
         for (int i = 0; i < TempPlanStorage.Count;i++ ) // each string array is 1 action N params
         {
             Task newTask = new Task();
             for (int j = 0; j < DomainActions.Count; j++)// if we first match to an action, we can limit the number of required searchs, i.e only search for buildings
-                if (TempPlanStorage[i][0] == DomainActions[j].ActionName)
+                if (TempPlanStorage[i][0].Equals(DomainActions[j].ActionName, System.StringComparison.InvariantCultureIgnoreCase))
                 {
                     newTask.Action = DomainActions[j].ActionType;
                     //1st we get the villagers involved
@@ -212,7 +213,9 @@ public class TaskPlanning  {
                     }
                     else
                         newTask.Path.End = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]], Goal);
+				TotalTasks.Add(newTask);
                 }
+
         }
             // at the end empty it
             TempPlanStorage = null;
@@ -237,22 +240,29 @@ public class TaskPlanning  {
         if (!File.Exists(solutionfileloc))
             return false;
         var solution = File.ReadAllLines(solutionfileloc).Where(s => s.Contains(":")).ToArray();
-        if (checktime())
-            return false;
+       // if (checktime())
+       //     return false;
         List<string[]> croppedSolution = new List<string[]>();
         foreach(var action in solution)
         {
             //now we parse based upon the action
             // once the action is identified we complete the struct to be returned
-            char[] seperatingchars = {' ','('};
-            var actionline = action.Split(seperatingchars);
-            // remove the extra i.e )
+            char[] seperatingchars = {' ','(',')'};
+            var actionline = action.Split(seperatingchars).ToList();
+            // remove the extra stuff
+
             int i = 0;
             for (i = 0; i < actionline.Count(); ++i)
-                if (actionline[i].Contains(')') == true)
-                    break;
-            actionline[0].Remove(i - 1, (actionline.Count() - (i - 1)));
-            croppedSolution.Add(actionline);
+			{
+				if (actionline[i].Contains(':')  ||actionline[i].Contains('[') || actionline[i] == "")
+				{
+					actionline.RemoveAt(i);
+					i--;
+				}
+			}
+			if(actionline[0].Equals( ""))
+				return false;
+            croppedSolution.Add(actionline.ToArray());
         }
         // now we should have a list of all required
         // temp storage and time check ????
@@ -364,6 +374,7 @@ public class TaskPlanning  {
         for (int i = 0; i < Goal.GameState.Villagers.Count; i++)
         {
             writer.WriteLine("villager_" + i.ToString() + " - person");
+			writer.WriteLine("Start_" + i.ToString() + " - location");
         }
         for (int i = 0; i < Goal.GameState.OwnedLocations.Count; i++)
         {
@@ -424,10 +435,10 @@ public class TaskPlanning  {
             else if(Goal.GameState.Villagers[i].Inventory == Villager.Items.Rifle)
                 item = "Rifle";
             else
-                continue;
-
-            writer.WriteLine("(has-" + item + " " + "villager_" + i.ToString() + ")");
-            writer.WriteLine("(at villager_"+i.ToString()+"Start_"+i.ToString() + ")"); // so all villagers start at an arbitrary possition based on their current position at time of planning
+                item  = "";
+			if(item != "")
+            	writer.WriteLine("(has-" + item + " " + "villager_" + i.ToString() + ")");
+            writer.WriteLine("(at villager_"+i.ToString()+" Start_"+i.ToString() + ")"); // so all villagers start at an arbitrary possition based on their current position at time of planning
         }
        
         for (int i = 0; i < Goal.GameState.OwnedLocations.Count; i++)
@@ -456,8 +467,8 @@ public class TaskPlanning  {
             else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Turf_Hut)
                 location = "turfhut";
             else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.buildingSite)
-                location = "BuildingSite";
-            writer.WriteLine("(is-" + location + "building_" + i.ToString() + ")");
+                continue;
+            writer.WriteLine("(is-" + location + " building_" + i.ToString() + ")");
             foreach(var Item in Goal.GameState.OwnedLocations[i].Items)
             {
                 string item;
@@ -489,6 +500,9 @@ public class TaskPlanning  {
             }
 
         }
+		if(Goal.NewBuildings != Building.BuildingType.None)
+			writer.WriteLine("(is-BuildingSite buildingSite)");
+
         writer.Write(")");
         writer.WriteLine("(:goal ");
         //here we loop through the goal state
