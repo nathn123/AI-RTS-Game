@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-public class Building : MonoBehaviour {
+public class Building {
 
     public enum BuildingType
     {
@@ -16,20 +16,17 @@ public class Building : MonoBehaviour {
         Quarry,
         Sawmill,
         Blacksmith,
-        Market_Stall
+        Market_Stall,
+        None
     };
     public BuildingType Type;
     public Vector2 Position, Dimensions;
     public List<Villager.Items> Items;
-	// Use this for initialization
-	void Start () {
-        Items = new List<Villager.Items>();
-        Type = BuildingType.buildingSite;
-        this.gameObject.transform.position = new Vector3(this.transform.position.x, this.transform.position.y, -1);
-	
-	}
+
     public void Initialise(Vector2 Pos,Vector2 Dims, List<Villager.Items> BuildingItems)
     {
+        Items = new List<Villager.Items>();
+        Type = BuildingType.buildingSite;
         Position = Pos;
         Dimensions = Dims;
         Items.AddRange(BuildingItems);

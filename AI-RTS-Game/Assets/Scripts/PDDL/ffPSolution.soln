@@ -1,8 +1,6 @@
 ; Time 0.00
 ; ParsingTime
-; NrActions 3
-; MakeSpan 3
+; NrActions 1
+; MakeSpan 1
 ; MetricValue 
-0: (PICK ALEX TREE1 ) [1]
-1: (FLY ALEX TREE1 TREE2 ) [1]
-2: (PICK ALEX TREE2 ) [1]
+0: (EDUCATE_LUMBERJACK VILLAGER_1 VILLAGER_0 ) [1]

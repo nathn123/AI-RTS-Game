@@ -98,7 +98,7 @@ public class TaskPlanning  {
         //if (Time.time - starttime > allowedtime)
         //    return true;
         //return false;
-        return true;
+        return false;
     }
     //public void GetGameState(VillageManager.GameState State)
     //{
@@ -154,6 +154,8 @@ public class TaskPlanning  {
             return Goal.GameState.OwnedLocations[num].Position;
         else if (prefix == "tree")
             return Goal.GameState.Trees[num].Pos;
+        else if (name.Contains("buildingSite"))
+            return Goal.Site.Position;
 
         return new Vector2(float.MaxValue,float.MaxValue);
     }
@@ -210,20 +212,22 @@ public class TaskPlanning  {
                     }
                     else
                         newTask.Path.End = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]], Goal);
-
                 }
-
         }
             // at the end empty it
             TempPlanStorage = null;
     }
     void RunPlan()
     {
-        // find metricFF file path / execute .batfile
-        mFF.StartInfo.FileName = Application.dataPath + @"/scripts/PDDL/metric-ff.exe";
-        mFF.StartInfo.Arguments = string.Format("-o {0}.pddl -f {1}.pddl", domainfileloc, problemfileloc);
-        mFF.StartInfo.CreateNoWindow = true;
-        mFF.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+        if (mFF == null)
+        {
+            mFF = new Process();
+            // find metricFF file path / execute .batfile
+            mFF.StartInfo.FileName = Application.dataPath + @"/scripts/PDDL/metric-ff.exe";
+            mFF.StartInfo.Arguments = string.Format("-o {0}.pddl -f {1}.pddl", domainfileloc, problemfileloc);
+            mFF.StartInfo.CreateNoWindow = true;
+            mFF.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+        }
         // run the process, and wait until it has closed
         mFF.Start();
         mFF.WaitForExit();
@@ -363,58 +367,16 @@ public class TaskPlanning  {
         }
         for (int i = 0; i < Goal.GameState.OwnedLocations.Count; i++)
         {
-            if(Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Barracks)
-            {
-                writer.WriteLine("building_"+i.ToString() + " - Barracks");
-            }
-            else if(Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Blacksmith)
-            {
-                writer.WriteLine("building_"+i.ToString() + " - Blacksmith");
-            }
-            else if(Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.House)
-            {
-                writer.WriteLine("building_"+i.ToString() + " - house");
-            }
-            else if(Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Market_Stall)
-            {
-                writer.WriteLine("building_"+i.ToString() + " - Market_Stall");
-            }
-            else if(Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Mine)
-            {
-                writer.WriteLine("building_"+i.ToString() + " - Mine");
-            }
-            else if(Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Quarry)
-            {
-                writer.WriteLine("building_"+i.ToString() + " - Quarry");
-            }
-            else if(Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Sawmill)
-            {
-                writer.WriteLine("building_"+i.ToString() + " - Sawmill");
-            }
-            else if(Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.School)
-            {
-                writer.WriteLine("building_"+i.ToString() + " - School");
-            }
-            else if(Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Smelter)
-            {
-                writer.WriteLine("building_"+i.ToString() + " - Smelter");
-            }
-            else if(Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Storage)
-            {
-                writer.WriteLine("building_"+i.ToString() + " - Storage");
-            }
-            else if(Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Turf_Hut)
-            {
-                writer.WriteLine("building_"+i.ToString() + " - turfhut");
-            }
+            writer.WriteLine("building_" + i.ToString() + " - location");
         }
-        if (Goal.NewBuildings != null)
-            writer.WriteLine("buildingSite" + " - BuildingSite");
-        for (int i = 0; i < Goal.GameState.Trees.Count; i++)
-        {
-            writer.WriteLine("Tree_" + i.ToString() + "- Tree");
-        }
-            writer.Write(")");
+        if (Goal.NewBuildings != Building.BuildingType.None )
+            writer.WriteLine("buildingSite" + " - location");
+        if(Goal.GameState.Trees != null)
+            for (int i = 0; i < Goal.GameState.Trees.Count; i++)
+            {
+                writer.WriteLine("Tree_" + i.ToString() + "- Tree");
+            }
+        writer.Write(")");
         writer.WriteLine("(:init ");
         //here we loop through the initial state and set up the predicates such as which items are where
         for (int i = 0; i < Goal.GameState.Villagers.Count; i++)
@@ -465,10 +427,37 @@ public class TaskPlanning  {
                 continue;
 
             writer.WriteLine("(has-" + item + " " + "villager_" + i.ToString() + ")");
+            writer.WriteLine("(at villager_"+i.ToString()+"Start_"+i.ToString() + ")"); // so all villagers start at an arbitrary possition based on their current position at time of planning
         }
        
         for (int i = 0; i < Goal.GameState.OwnedLocations.Count; i++)
         {
+            string location = "";
+            if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Barracks)
+                location = "Barracks";
+            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Blacksmith)
+                location = "Blacksmith";
+            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.House)
+                location = "house";
+            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Market_Stall)
+                location = "Market_Stall";
+            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Mine)
+                location = "Mine";
+            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Quarry)
+                location = "Quarry";
+            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Sawmill)
+                location = "Sawmill";
+            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.School)
+                location = "School";
+            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Smelter)
+                location = "Smelter";
+            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Storage)
+                location = "Storage";
+            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.Turf_Hut)
+                location = "turfhut";
+            else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.buildingSite)
+                location = "BuildingSite";
+            writer.WriteLine("(is-" + location + "building_" + i.ToString() + ")");
             foreach(var Item in Goal.GameState.OwnedLocations[i].Items)
             {
                 string item;
@@ -505,106 +494,49 @@ public class TaskPlanning  {
         //here we loop through the goal state
 
         writer.WriteLine("(and");
-        if (Goal.NewBuildings != null)
+        if (Goal.NewBuildings != Building.BuildingType.None)
         {
-            // goal required to build building 
-            List<Villager.Items> neededitems = new List<Villager.Items>();
-            string LabourerName = "NULL";
-            string CarpenterName = "NULL";
-            string BlacksmithName = "NULL";
-            for (int i = 0; i < Goal.GameState.Villagers.Count;i++ )
-            {
-                if (LabourerName == "NULL" && Goal.GameState.Villagers[i].Skill == Villager.Skills.Labourer)
-                    LabourerName = "villager_" + i.ToString();
-                if (CarpenterName == "NULL" && Goal.GameState.Villagers[i].Skill == Villager.Skills.Carpenter)
-                    CarpenterName = "villager_" + i.ToString();
-                if (BlacksmithName == "NULL" && Goal.GameState.Villagers[i].Skill == Villager.Skills.Blacksmith)
-                    BlacksmithName = "villager_" + i.ToString();
-            }
-                if (Goal.NewBuildings == Building.BuildingType.Barracks)
-                {
-                    neededitems.Add(Villager.Items.Stone);
-                    neededitems.Add(Villager.Items.Wood);
-                    neededitems.Add(Villager.Items.Iron);
-                    neededitems.Add(Villager.Items.Timber);
-                }
-                else if (Goal.NewBuildings == Building.BuildingType.Turf_Hut || Goal.NewBuildings == Building.BuildingType.Quarry)
-                {
 
-                }
-                else if (Goal.NewBuildings == Building.BuildingType.House)
-                {
-                    neededitems.Add(Villager.Items.Stone);
-                    neededitems.Add(Villager.Items.Wood);
-                }
-                else if (Goal.NewBuildings == Building.BuildingType.School)
-                {
-                    neededitems.Add(Villager.Items.Stone);
-                    neededitems.Add(Villager.Items.Wood);
-                    neededitems.Add(Villager.Items.Iron);
-
-                }
-                else if (Goal.NewBuildings == Building.BuildingType.Storage)
-                {
-                    neededitems.Add(Villager.Items.Stone);
-                    neededitems.Add(Villager.Items.Wood);
-                }
-                else if (Goal.NewBuildings == Building.BuildingType.Mine)
-                {
-                    neededitems.Add(Villager.Items.Wood);
-                    neededitems.Add(Villager.Items.Iron);
-                }
-                else if (Goal.NewBuildings == Building.BuildingType.Smelter)
-                {
-                    neededitems.Add(Villager.Items.Stone);
-                }
-                else if (Goal.NewBuildings == Building.BuildingType.Sawmill)
-                {
-                    neededitems.Add(Villager.Items.Stone);
-                    neededitems.Add(Villager.Items.Iron);
-                    neededitems.Add(Villager.Items.Timber);
-                }
-                else if (Goal.NewBuildings == Building.BuildingType.Blacksmith)
-                {
-                    neededitems.Add(Villager.Items.Stone);
-                    neededitems.Add(Villager.Items.Iron);
-                    neededitems.Add(Villager.Items.Timber);
-                }
-            foreach (var Item in neededitems)
+            if (Goal.NewBuildings == Building.BuildingType.Barracks)
             {
-                string item;
-                if (Item == Villager.Items.Stone)
-                    item = "Stone";
-                else if (Item == Villager.Items.Wood)
-                    item = "Wood";
-                else if (Item == Villager.Items.Iron)
-                    item = "Iron";
-                else if (Item == Villager.Items.Timber)
-                    item = "Timber";
-                else if (Item == Villager.Items.Ore)
-                    item = "Ore";
-                else if (Item == Villager.Items.Coal)
-                    item = "Coal";
-                else if (Item == Villager.Items.Money)
-                    item = "Money";
-                else if (Item == Villager.Items.Goods)
-                    item = "Goods";
-                else if (Item == Villager.Items.Axe)
-                    item = "Axe";
-                else if (Item == Villager.Items.Cart)
-                    item = "Cart";
-                else if (Item == Villager.Items.Rifle)
-                    item = "Rifle";
-                else
-                    continue;
-                writer.WriteLine("(has-" + item + " buildingSite)");
+                writer.WriteLine("(is-Barracks buildingSite)");
             }
-            if (LabourerName != "NULL")
-                writer.WriteLine("(at " + LabourerName + " buildingSite)");
-            if (CarpenterName != "NULL")
-                writer.WriteLine("(at " + CarpenterName + " buildingSite)");
-            if (BlacksmithName != "NULL")
-                writer.WriteLine("(at " + BlacksmithName + " buildingSite)");
+            else if (Goal.NewBuildings == Building.BuildingType.Turf_Hut)
+            {
+                writer.WriteLine("(is-turfhut buildingSite)");
+            }
+            else if (Goal.NewBuildings == Building.BuildingType.Quarry)
+            {
+                writer.WriteLine("(is-Quarry buildingSite)");
+            }
+            else if (Goal.NewBuildings == Building.BuildingType.House)
+            {
+                writer.WriteLine("(is-House buildingSite)"); ;
+            }
+            else if (Goal.NewBuildings == Building.BuildingType.School)
+            {
+                writer.WriteLine("(is-School buildingSite)");
+            }
+            else if (Goal.NewBuildings == Building.BuildingType.Storage)
+            {
+                writer.WriteLine("(is-Storage buildingSite)");
+            }
+            else if (Goal.NewBuildings == Building.BuildingType.Mine)
+            {
+                writer.WriteLine("(is-Mine buildingSite)");
+            }
+            else if (Goal.NewBuildings == Building.BuildingType.Smelter)
+            {
+                writer.WriteLine("(is-Smelter buildingSite)");
+            }
+            else if (Goal.NewBuildings == Building.BuildingType.Sawmill)
+            {
+                writer.WriteLine("(is-Sawmill buildingSite)");
+            }
+            else if (Goal.NewBuildings == Building.BuildingType.Blacksmith)
+            {
+                writer.WriteLine("(is-Blacksmith buildingSite)");
+            }
         }
         else if(Goal.NewSkills != null)
         {
@@ -685,6 +617,7 @@ public class TaskPlanning  {
         writer.Write(")");
         writer.Write(")");
         writer.Write(")");
+        writer.Dispose();
         return true;
     }
 }

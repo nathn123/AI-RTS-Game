@@ -22,7 +22,7 @@ public class VillageManager {
     float starttime, allowedtime;
     //List<> Tasks;
 
-    char[,] Map, AiMap;
+    char[,] AiMap;
 
     // rather than global objects, have a list of maximum concurrent tasks
     // each task is deceided based upon certain conditions
@@ -55,6 +55,7 @@ public class VillageManager {
     {
         // what we want at the end
         public Building.BuildingType NewBuildings;
+        public Building Site;
         public List<Villager.Items> NewItems;
         public List<Villager.Skills> NewSkills;
         // only storing new values otherwise we would have to calculate the future gamestate too much effort
@@ -113,17 +114,19 @@ public class VillageManager {
         if (!Initialised)
             return;
 
-        UpdateMap();
         starttime = Time.time;
         // after each step  we need to do to ensure it has time availiable
         if (checktime())
             return; 
 
         //do we have an objective set
+        CheckRetrieveTask();
         if (CurrentObj.Count < MaxTasks)
             GenerateNewTask();
         if (checktime())
             return;
+        RequestPath();
+        
         // must have a global objective / now we need to set sub-objectives ????
 
         ObjectiveCompleted();
@@ -169,40 +172,33 @@ public class VillageManager {
         CurrentBias = bias;
         AiMap = AiMap_;
         Villagers = new List<Villager>();
+        AvailableVillagers = new List<Villager>();
         Buildings = new List<Building>();
         TreeMgr = TreeMgr_;
         Villagers.Add((GameObject.Instantiate(MaleVillager, new Vector3(StartingPos.x, StartingPos.y), Quaternion.identity) as GameObject).GetComponent<Villager>() );
         Villagers.Add( (GameObject.Instantiate(FemaleVillager, new Vector3(StartingPos.x, StartingPos.y), Quaternion.identity) as GameObject).GetComponent<Villager>());
+        foreach (var vill in Villagers)
+            vill.Initialise();
+        AvailableVillagers.AddRange(Villagers);
         Initialised = true;
     }
 
-    void UpdateMap()
-    {
-        foreach(var villager in Villagers)
-        {
-            var position = villager.GetComponent<Villager>().Position;
-            var range = villager.GetComponent<Villager>().FOV;
-            for(int i = -range; i<range;++i)
-            {
-                for(int j = -range; j<range;++j)
-                {
-                    Map[(int)position.x + i, (int)position.y + j] = AiMap[(int)position.x + i, (int)position.y + j];
-                }
-            }
-        }
-    }
 
-    void PassGoal(GoalState goal)
+    void PassGoal(GoalState goal, ObjectiveTypes Type)
     {
         ObjectiveTasks newTask = new ObjectiveTasks();
+        newTask.Type = Type;
         newTask.PathID = -1;
         newTask.TaskID = TaskPlanner.RequestTask(goal);
+        Debug.Log("new task created Type : " + Type.ToString());
         CurrentObj.Add(newTask);
     }
     void RequestPath()
     {
         for (int i = 0; i < CurrentObj.Count; i++)
         {
+            if (CurrentObj[i].Stepsneeded == null)
+                return;
             for(int j= 0; j < CurrentObj[i].Stepsneeded.Count;j++)
             {
                 // check to see if path is needed
@@ -237,7 +233,7 @@ public class VillageManager {
     void GenerateNewTask()
     {
 
-        int Pop = 0, RRes = 0, ARes = 0, Scout = 0, Hous = 0, Edu = 0,Spec = 0 , Money = 0, Trade = 0, War = 0;
+        int Pop = 0, ARes = 0, Scout = 0, Hous = 0, Edu = 0,Spec = 0 , Money = 0, Trade = 0, War = 0;
         // first we count the number of objectives already set with specific types, so we dont focus only on one type all the time
         int ObjCap = Mathf.CeilToInt(MaxTasks *0.4f); // maximum of 40% of tasks dedicated to one objective type
         foreach(var obj in CurrentObj)
@@ -377,105 +373,189 @@ public class VillageManager {
         // continue to add tasks until the cap is reached
     
         int noneselected = 1; // this var is added to combat infinite loops, will reduce the requirements to activate a task until a task is met
-        do
+        
+        bool NeedTree = false;
+        while (CurrentObj.Count < MaxTasks && noneselected < 20 && AvailableVillagers.Count > 0)
         {
-            ObjectiveTasks newObjective = new ObjectiveTasks();
+            List<Villager.Skills> NeededSkills = new List<Villager.Skills>();
+            ObjectiveTypes newObj = new ObjectiveTypes();
             GoalState newGoal = new GoalState();
-            if(Labs < (TotPop *0.1f)/noneselected && Pop < ObjCap) // Increase Pop
+            newGoal.NewBuildings = Building.BuildingType.None;
+            if(Labs < TotPop *0.25f && Pop < ObjCap && House > 0) // Increase Pop
             {
-                if(Turf == 0) // build house instead
-                {
 
-                }
                 // we need to gen a current state / decide what is going to be used here.
-                newObjective.Type = ObjectiveTypes.IncreasePopulation;
+                newObj = ObjectiveTypes.IncreasePopulation;
                 for (int i = 0; i < 5; i++)
                     newGoal.AddNewSkills(Villager.Skills.Labourer);
-                newObjective.TaskID = TaskPlanner.RequestTask(newGoal);
-                CurrentObj.Add(newObjective);
+                NeededSkills.Add(Villager.Skills.Any);
+                NeededSkills.Add(Villager.Skills.Any);
                 noneselected = 1;
                 Pop++;
             }
-            else if (ARes < ObjCap) // IncreaseAdvResources
+            else if (ARes < ObjCap && BlacksB > 0 && BlacksP > 0) // IncreaseAdvResources -rifles /carts axes
             {
+                newObj = ObjectiveTypes.IncreaseAdvResources;
+                if(RifleI < Rifle )
+                {
+                    newGoal.NewItems.Add( Villager.Items.Rifle);
+                    ARes++;
+                    NeededSkills.Add(Villager.Skills.Blacksmith);
+                }
             }
             else if (Turf+House < TotPop/2 && Hous < ObjCap) // IncreaseHousing
             {
+                newObj = ObjectiveTypes.IncreaseHousing;
                 if(Quar>0) // build house
                 {
-
+                    newGoal.NewBuildings = Building.BuildingType.House;
+                    var building = GenerateBuildingSite(Building.BuildingType.House);
+                    newGoal.Site = building;
+                    NeededSkills.Add(Villager.Skills.Labourer);
+                    NeededSkills.Add(Villager.Skills.Lumberjack);
+                    NeededSkills.Add(Villager.Skills.Carpenter);
+                    Buildings.Add(building);
+                    Hous++;
                 }
                 else // build turf
                 {
-
+                    newGoal.NewBuildings = Building.BuildingType.Turf_Hut;
+                    var building = GenerateBuildingSite(Building.BuildingType.Turf_Hut);
+                    newGoal.Site = building;
+                    NeededSkills.Add(Villager.Skills.Labourer);
+                    Buildings.Add(building);
+                    Hous++;
                 }
 
             }
             else if (Edu < ObjCap) // IncreaseEducation
             {
+                newObj = ObjectiveTypes.IncreaseEducation;
                 // we want ratios of people
                 // 25 % labour
-                //20% lumber
+                // 20% lumber
                 // 20% miner
                 // 20% blacksmith
                 // 15% rifle
                 if(Lumber < Mathf.CeilToInt(0.2f * TotPop))
                 {
-
+                    newGoal.NewSkills.Add(Villager.Skills.Lumberjack);
+                    NeededSkills.Add(Villager.Skills.Labourer);
+                    NeededSkills.Add(Villager.Skills.Any);
+                    Edu++;
                 }
                 else if (Mine < Mathf.CeilToInt(0.2f * TotPop))
                 {
-
+                    newGoal.NewSkills.Add(Villager.Skills.Miner);
+                    NeededSkills.Add(Villager.Skills.Labourer);
+                    NeededSkills.Add(Villager.Skills.Any);
+                    Edu++;
                 }
                 else if (BlacksP < Mathf.CeilToInt(0.2f * TotPop))
                 {
-
+                    newGoal.NewSkills.Add(Villager.Skills.Blacksmith);
+                    NeededSkills.Add(Villager.Skills.Labourer);
+                    NeededSkills.Add(Villager.Skills.Any);
+                    Edu++;
                 }
                 else if (Rifle < Mathf.CeilToInt(0.15f * TotPop))
                 {
-
+                    newGoal.NewSkills.Add(Villager.Skills.Rifleman);
+                    NeededSkills.Add(Villager.Skills.Labourer);
+                    NeededSkills.Add(Villager.Skills.Any);
+                    Edu++;
                 }
 
             }
             else if (Spec < ObjCap) // IncreaseSpecialistBuilding
             {
+                newObj = ObjectiveTypes.IncreaseSpecialistBuilding;
                 if(Smelt > 0)
                 {
                     if(Scho == 0) // build school
                     {
-
+                        newGoal.NewBuildings = Building.BuildingType.School;
+                        var building = GenerateBuildingSite(Building.BuildingType.School);
+                        newGoal.Site = building;
+                        NeededSkills.Add(Villager.Skills.Labourer);
+                        NeededSkills.Add(Villager.Skills.Lumberjack);
+                        NeededSkills.Add(Villager.Skills.Carpenter);
+                        Buildings.Add(building);
+                        Spec++;
                     }
                     else if (BlacksB <(BlacksP*2)) // build blacksmith
                     {
-
+                        newGoal.NewBuildings = Building.BuildingType.Blacksmith;
+                        var building = GenerateBuildingSite(Building.BuildingType.Blacksmith);
+                        newGoal.Site = building;
+                        NeededSkills.Add(Villager.Skills.Labourer);
+                        NeededSkills.Add(Villager.Skills.Miner);
+                        Buildings.Add(building);
+                        Spec++;
                     }
                     else if(Saw < Mathf.CeilToInt(0.05f*TotPop)) // build sawmill
                     {
-
+                        newGoal.NewBuildings = Building.BuildingType.Sawmill;
+                        var building = GenerateBuildingSite(Building.BuildingType.Sawmill);
+                        newGoal.Site = building;
+                        NeededSkills.Add(Villager.Skills.Labourer);
+                        NeededSkills.Add(Villager.Skills.Miner);
+                        Buildings.Add(building);
+                        Spec++;
                     }
                     else if (Barr < Mathf.CeilToInt(0.05f * TotPop))
                     {
-
+                        newGoal.NewBuildings = Building.BuildingType.Barracks;
+                        var building = GenerateBuildingSite(Building.BuildingType.Barracks);
+                        newGoal.Site = building;
+                        NeededSkills.Add(Villager.Skills.Labourer);
+                        NeededSkills.Add(Villager.Skills.Carpenter);
+                        NeededSkills.Add(Villager.Skills.Lumberjack);
+                        Buildings.Add(building);
+                        Spec++;
                     }
                     else if (Stora < Mathf.CeilToInt(0.05f * TotPop))
                     {
-
+                        newGoal.NewBuildings = Building.BuildingType.Storage;
+                        var building = GenerateBuildingSite(Building.BuildingType.Storage);
+                        NeededSkills.Add(Villager.Skills.Labourer);
+                        NeededSkills.Add(Villager.Skills.Carpenter);
+                        NeededSkills.Add(Villager.Skills.Lumberjack);
+                        newGoal.Site = building;
+                        Buildings.Add(building);
+                        Spec++;
                     }
                     else if (Mark < Mathf.CeilToInt(0.05f * TotPop))
                     {
-
+                        newGoal.NewBuildings = Building.BuildingType.Market_Stall;
+                        NeededSkills.Add(Villager.Skills.Carpenter);
+                        NeededSkills.Add(Villager.Skills.Lumberjack);
+                        var building = GenerateBuildingSite(Building.BuildingType.Market_Stall);
+                        newGoal.Site = building;
+                        Buildings.Add(building);
+                        Spec++;
                     }
                 }
                 else // build smelter
                 {
-
+                    newGoal.NewBuildings = Building.BuildingType.Smelter;
+                    NeededSkills.Add(Villager.Skills.Labourer);
+                    var building = GenerateBuildingSite(Building.BuildingType.Smelter);
+                    newGoal.Site = building;
+                    Buildings.Add(building);
+                    Spec++;
                 }
             }
             else
                 noneselected++;
-        } while (CurrentObj.Count < MaxTasks && noneselected < 20 && AvailableVillagers.Count > 0);
+            if(GenerateGameState(NeededSkills,ref newGoal.GameState,NeedTree))
+                PassGoal(newGoal, newObj);
+                
+        } 
+        if (noneselected >= 20)
+            return; // no objective set
     }
-    bool GenerateGameState(List<Villager.Skills> NeededSkills,List<Building.BuildingType> NeededBuildings, ref GameState State, bool Trees)
+    bool GenerateGameState(List<Villager.Skills> NeededSkills, ref GameState State, bool Trees)
     {
         // to generate a game state , we mean to generate a list of entities that will be used for a task villagers/ buildings etc
         // we will assume all buildings are free, as there is no way to run plans concurrently and be able to check if the building is free at the time it is needed in that task
@@ -484,29 +564,27 @@ public class VillageManager {
         do
         {
             for (int j = 0; j < AvailableVillagers.Count; j++)
-                if (AvailableVillagers[j].Skill == NeededSkills[0])
+                if (AvailableVillagers[j].Skill == NeededSkills[0] || NeededSkills[0] == Villager.Skills.Any)
                 {
                     runcount = 0;
+                    if (State.Villagers == null)
+                        State.Villagers = new List<Villager>();
                     State.Villagers.Add(AvailableVillagers[j]);
                     NeededSkills.RemoveAt(0);
                     AvailableVillagers.RemoveAt(j);
+                    break;
                 }
-            runcount++;
+                else
+                    runcount++;
         } while (NeededSkills.Count > 0 && runcount > (NeededSkills.Count * 2) * AvailableVillagers.Count);
         if (NeededSkills.Count > 1)
-            return false;
-        runcount = 0;
-        do
         {
-            for(int i = 0; i < Buildings.Count; i++)
-                if(Buildings[i].Type == NeededBuildings[0])
-                {
-                    runcount = 0;
-                    State.OwnedLocations.Add(Buildings[i]);
-                    NeededBuildings.RemoveAt(0);
-                }
-            runcount++;
-        } while (NeededBuildings.Count > 0 && runcount > (NeededBuildings.Count * 2) * Buildings.Count);
+            AvailableVillagers.AddRange(State.Villagers);
+            State.Villagers.Clear();
+            return false;
+        }
+        runcount = 0;
+        State.OwnedLocations = Buildings; // all buildings added
 
         if(Trees)
         {
@@ -517,11 +595,7 @@ public class VillageManager {
                    State.Trees.Add(TreeMgr.FindNearestTree(vill.Position));
             }
         }
-
-        if (NeededBuildings.Count < 1)
-            return true;
-
-            return false;
+        return true;
     }
     void ObjectiveCompleted()
     {
@@ -585,6 +659,7 @@ public class VillageManager {
         foreach (var steps in Current.Stepsneeded)
             if (steps.complete != true)
                 return false;
+        Current.complete = true;
         return true;
     }
 

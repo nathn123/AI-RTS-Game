@@ -1,2 +1,2 @@
-metric-ff.exe -o coconut-domain.pddl -f coconut-problem.pddl
+metric-ff.exe -o domain.pddl -f problem.pddl
 pause

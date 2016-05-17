@@ -2,11 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class TreeManager : MonoBehaviour {
+public class TreeManager {
 
     Tree[,] TotalTrees;
     List<Tree> ActiveTrees;
     float LastRefresh;
+    bool Initialised = false;
 	// Use this for initialization
 	void Start () {
         
@@ -25,10 +26,13 @@ public class TreeManager : MonoBehaviour {
             }
         }
         ActiveTrees = new List<Tree>();
+        Initialised = true;
     }
 	// Update is called once per frame
 	public void Update () {
 
+        if (!Initialised)
+            return;
         if ((Time.time - LastRefresh) >= 10.0f)
         {
             foreach (var Tree in ActiveTrees)
@@ -37,6 +41,8 @@ public class TreeManager : MonoBehaviour {
         }
         foreach(var tree in TotalTrees)
         {
+            if (tree == null)
+                continue;
             if (tree.Full() && ActiveTrees.Contains(tree))
                 ActiveTrees.Remove(tree);
             else if (!tree.Full() && !ActiveTrees.Contains(tree))

@@ -2,44 +2,8 @@
 <Durative-FF-Depend>
 <Operator>
 <Name>
-(PICK ALEX TREE1)</Name>
+(EDUCATE_LUMBERJACK VILLAGER_1 VILLAGER_0)</Name>
 
-</Operator>
-
-<Operator>
-<Name>
-(FLY ALEX TREE1 TREE2)</Name>
-
-<Depend>
- 
-<On_Operator>
- 
-<Name>
-(PICK ALEX TREE1)
-</Name>
-
-</On_Operator>
- 
-</Depend>
- 
-</Operator>
-
-<Operator>
-<Name>
-(PICK ALEX TREE2)</Name>
-
-<Depend>
- 
-<On_Operator>
- 
-<Name>
-(FLY ALEX TREE1 TREE2)
-</Name>
-
-</On_Operator>
- 
-</Depend>
- 
 </Operator>
 
 

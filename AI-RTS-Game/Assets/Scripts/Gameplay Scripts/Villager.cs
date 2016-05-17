@@ -13,7 +13,8 @@ public class Villager : MonoBehaviour {
         Blacksmith,
         Miner,
         Lumberjack,
-        Carpenter
+        Carpenter,
+        Any
     };
     public enum Actions
     {
@@ -63,6 +64,7 @@ public class Villager : MonoBehaviour {
     public Actions CurrentAction;
     public Skills Skill;
     public bool ActionComplete;
+    bool Initialised = false;
     public float MoveSpeed;
     public float CurrentActionTime;
     public float ActionTime;
@@ -70,17 +72,24 @@ public class Villager : MonoBehaviour {
     public Items Inventory;
 	// Use this for initialization
 	void Start () {
+
+        
+	}
+    public void Initialise()
+    {
         Path = new List<Vector2>();
         CurrentAction = Actions.None;
         Skill = Skills.Labourer;
         Inventory = Items.Empty;
-        this.gameObject.transform.position = new Vector3(this.transform.position.x,this.transform.position.y,-2);
-        
-	}
+        this.gameObject.transform.position = new Vector3(this.transform.position.x, this.transform.position.y, -2);
+        Initialised = true;
+    }
 	
 	// Update is called once per frame
 	void Update () 
     {
+        if (!Initialised)
+            Initialise();
         // if it has a path it should move
         if (Path.Count > 0)
             Move();
