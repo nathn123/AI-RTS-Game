@@ -25,6 +25,7 @@ public class TaskPlanning  {
         public List<Villager> villager; //ref to the villager or villagers performing the task
         public Villager.Actions Action;
         public PathPlanning.PathInfo Path;
+        public Building BuildingInUse;
         public int PathID { get; set; }
         public bool complete { get; set; }
 
@@ -152,7 +153,7 @@ public class TaskPlanning  {
     {
         return Goal.GameState.Villagers[int.Parse(name.Split('_')[1])];
     }
-    Vector2 FindBuilding(string name, VillageManager.GoalState Goal)
+    Vector2 FindBuilding(string name, VillageManager.GoalState Goal,ref Building SelectedBuilding)
     {
         
         if (name.Split('_')[0].Equals( "Start", System.StringComparison.InvariantCultureIgnoreCase))
@@ -225,19 +226,21 @@ public class TaskPlanning  {
                     newTask.ItemRequired = DomainActions[j].ItemType;
                     newTask.SkillToBeLearnt = DomainActions[j].SkillType;
                     newTask.ToBeBuilt = DomainActions[j].BuildType;
+                    newTask.Path = new PathPlanning.PathInfo();
+                    
                     if (DomainActions[j].LocationParams.Count > 1)
                     {
                         // is move too action
-                        newTask.Path = new PathPlanning.PathInfo();
-                        newTask.Path.Start = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]], Goal);
-                        newTask.Path.End = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[1]], Goal);
+
+                        newTask.Path.Start = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]], Goal, ref newTask.BuildingInUse);
+                        newTask.Path.End = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[1]], Goal, ref newTask.BuildingInUse);
                         newTask.Path.Complete = false;
                         // otherwise goal is primary location
                     }
                     else
                     {
                         newTask.Path.Start = new Vector2(float.MaxValue,float.MaxValue);
-                        newTask.Path.End = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]], Goal);
+                        newTask.Path.End = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]], Goal, ref newTask.BuildingInUse);
                     }
                     newTask.complete = true;
 				TotalTasks.Add(newTask);

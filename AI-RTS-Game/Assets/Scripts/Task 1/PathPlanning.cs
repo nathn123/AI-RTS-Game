@@ -71,17 +71,21 @@ public class PathPlanning
     {
         // add the struct 
         // get the value added at and then return
+
+        //special case as trees are not walkable so
+        if (!Walkable(Map, newPath.End))
+            newPath.End = ClosestWalkable(newPath.End);
         Paths.Add(newPath);
         return Paths.Count - 1;
     }
-    static bool Walkable(char[,] map, Vector2 Pos)
+    public static bool Walkable(char[,] map, Vector2 Pos)
     {
         if (Pos.x > map.Length || Pos.y > map.Length)
             return false;
         if (Pos.x < 0 || Pos.y < 0)
             return false;
         char Loc = map[(int)Pos.x, (int)Pos.y];
-        if (Loc == '.' || Loc == 'G')
+        if (Loc == '.' || Loc == 'G' || Loc == 'E')
         {
             // walkable tile NOT GRASS
             return true;
@@ -89,6 +93,33 @@ public class PathPlanning
         // EDIT THIS IF NEEDED
         return false;
 
+    }
+    Vector2 ClosestWalkable(Vector2 Pos)
+    {
+        Vector2 Closest = Pos;
+        int range  = 1;
+        bool done = false;
+        while(Walkable(Map,Closest) )
+        {
+            range++;
+            for (int i = -range; i < range; i++)
+            {
+                for (int j = -range; j < range; j++)
+                {
+                    if (Walkable(Map, new Vector2(Closest.x + i, Closest.y + j)))
+                    {
+                        Closest = new Vector2(Closest.x + i, Closest.y + j);
+                        done = true;
+                        break;
+
+                    }
+                }
+                if (done)
+                    break;
+            }
+        }
+
+        return Closest;
     }
     Node GenerateNewNodes(Node NewNodeStart, List<Node> PrevNodes, Vector2 Goal)
     {
@@ -203,7 +234,15 @@ public class PathPlanning
         Start.parent = -1;
         Start.Pos = Paths[PathID].Start;
         if (Search(Paths[PathID].End, Start, ref NodePaths))
-            Paths[PathID].SetPath(NodesToPos(NodePaths));
+        {
+            PathInfo FinishedPath = new PathInfo();
+            FinishedPath.Complete = true;
+            FinishedPath.Path = NodesToPos(NodePaths);
+            FinishedPath.Start = Paths[PathID].Start;
+            FinishedPath.End = Paths[PathID].End;
+            Paths[PathID] = FinishedPath;
+        }
+            
     }
     List<Vector2> NodesToPos(List<Node> Nodes)
     {

@@ -61,11 +61,16 @@ public class Villager : MonoBehaviour {
     public List<Vector2> Path;
     public Vector2 Position;
     public Vector2 Goal;
+
     public Actions CurrentAction;
+    public Building LocationAction;
+    public Items ItemAction;
+    public Tree ToCut;
+    public VillageManager.NewVillager Preg;
     public Skills Skill;
     public bool ActionComplete;
-    bool Initialised = false;
-    public float MoveSpeed;
+    bool Initialised = false, Timer = false;
+    public float MoveSpeed = 1.0f;
     public float CurrentActionTime;
     public float ActionTime;
     public int FOV;
@@ -94,44 +99,70 @@ public class Villager : MonoBehaviour {
         if (Path.Count > 0)
             Move();
         // if at path goal then do Action
-        if (Position == Goal)
+        if (CurrentAction != Actions.Walk && CurrentActionTime >= ActionTime)
             DoAction();
+        else if (CurrentAction == Actions.Walk && Path.Count == 0)
+            CurrentAction = Actions.None;
+
+        if (Timer)
+            CurrentActionTime += Time.deltaTime;
+        transform.position = new Vector3(Position.x, Position.y, -2);
 	}
     public bool AddPath(List<Vector2> newPath)
     {
-        if (newPath.Count < 1)
-            return false;
-        Vector2 newPosition = newPath[0];
-        // first check that this path is possible
-        // i.e. that the path starts at or next to the current position
-        if (!CheckPath(newPath[0]))
-            return false;
-        // now add to current path
         Path.AddRange(newPath);
+        CurrentAction = Actions.Walk;
         return true;
     }
-    bool CheckPath(Vector2 startingpos)
+    public void SetAction(Villager.Actions NewAction,float ActionTime_ = 0)
     {
-        if (new Vector2(startingpos.x + 1, startingpos.y) == Position) // right
-            return true;
-        if (new Vector2(startingpos.x + 1, startingpos.y + 1) == Position) // up right
-            return true;
-        if (new Vector2(startingpos.x + 1, startingpos.y - 1) == Position) // down right
-            return true;
-        if (new Vector2(startingpos.x - 1, startingpos.y) == Position) // left
-            return true;
-        if (new Vector2(startingpos.x - 1, startingpos.y - 1) == Position) // down left
-            return true;
-        if (new Vector2(startingpos.x - 1, startingpos.y + 1) == Position) // up left
-            return true;
-        if (startingpos == Position) // centre
-            return true;
-        if (new Vector2(startingpos.x, startingpos.y - 1) == Position) // down
-            return true;
-        if (new Vector2(startingpos.x, startingpos.y + 1) == Position) // up
-            return true;
+        CurrentActionTime = 0;
+        CurrentAction = NewAction;
+        ActionTime = ActionTime_;
+        Timer = false;
+    }
+    public void SetAction(Villager.Actions NewAction, Building Location, Items Item, float ActionTime_ = 0)
+    {
+        Timer = false;
+        CurrentActionTime = 0;
+        ActionTime = ActionTime_;
+        // for pick up and put down Is instant
+        if (NewAction == Actions.Pickup)
+            if (Location.PickUp(Item))
+                Inventory = Item;
+        else if (NewAction == Actions.Putdown)
+        {
+            Location.DropOff(Item);
+            Inventory = Items.Empty;
+        }
+        //blacksmith production
+        if(Item == Items.Axe)
+        { }
+        else if (Item == Items.Cart)
+        { }
+        else if (Item == Items.Rifle)
+        { }
 
-        return false;
+    }
+    public void SetAction(Villager.Actions NewAction,Building Location,float ActionTime_ = 0)
+    {
+        ActionTime = ActionTime_;
+        CurrentActionTime = 0;
+        CurrentAction = NewAction;
+        LocationAction = Location;
+        Timer = false;
+    }
+    public void LearnSkill(Villager.Skills newSkills, Villager Teach)
+    {
+        Skill = newSkills;
+        Teach.StartTimer();
+        StartTimer();
+    }
+    //public delegate void StartTimer();
+    //private StartTimer Callback;
+    public void StartTimer()
+    {
+        Timer = true;
     }
     void Move()
     {
@@ -149,182 +180,95 @@ public class Villager : MonoBehaviour {
     // should we move this to a building script ??????
     public void DoAction() 
     {
+        Debug.Log("Villager Action");
         // not yet implemented
         // checks on the current square - prerequisites for action
-        if (CurrentAction == Actions.Buy_Sell && ActionComplete == false)
+        if(ActionComplete)
         {
-            // first check that square is correct
-            if (!CheckMap(Building.BuildingType.Market, Position))
-                return; // if the building required doesnt exist then return
-            // second check the required people are here
-            //third check the required resources are here
+            CurrentAction = Actions.None;
+            ActionComplete = false;
+            LocationAction = null;
+            Timer = false;
+            
+            return;
         }
-        // this one doesnt require a building but requires enemies present
-       // if (CurrentAction == Actions.Combat && ActionComplete == false)
-       // {
-            // first check that square is correct
-      //      if (!CheckMap(Map_Items.Turf_Hut, Position))
-       //         return; // if the building required doesnt exist then return
-            // second check the required people are here
-            //third check the required resources are here
-      //  }
-        if (CurrentAction == Actions.Cut_Tree && ActionComplete == false)
-        {
-            // first check that square is correct
-           // if (!CheckMap(Map_Items.Tree, Position))
-                return; // if the building required doesnt exist then return
-            // second check the required people are here
-            //third check the required resources are here        
-        }
-        if (CurrentAction == Actions.Educate && ActionComplete == false)
-        {
-            // second check the required people are here
 
-            //third check the required resources are here
+
+        if (CurrentAction == Actions.Buy_Sell)
+        {
 
         }
-        if (CurrentAction == Actions.Educate_Barracks && ActionComplete == false)
+        if (CurrentAction == Actions.Combat)
         {
-            // first check that square is correct
-            if (!CheckMap(Building.BuildingType.Barracks, Position))
-                return; // if the building required doesnt exist then return
-            // second check the required people are here
-            //third check the required resources are here
+
         }
-        if (CurrentAction == Actions.Family && ActionComplete == false)
+        if (CurrentAction == Actions.Cut_Tree)
         {
-            // first check that square is correct
-            if (!CheckMap(Building.BuildingType.Turf, Position))
-                return; // if the building required doesnt exist then return
-            // second check the required people are here
-            //third check the required resources are here
-        }
-        if (CurrentAction == Actions.Family_House && ActionComplete == false)
-        {
-            // first check that square is correct
-            if (!CheckMap(Building.BuildingType.House, Position))
-                return; // if the building required doesnt exist then return
-            // second check the required people are here
-            //third check the required resources are here
-        }
-        if (CurrentAction == Actions.Make_Tool && ActionComplete == false)
-        {
-            // first check that square is correct
-            if (!CheckMap(Building.BuildingType.Blacksmith, Position))
-                return; // if the building required doesnt exist then return
-            // second check the required people are here
-            //third check the required resources are here
-        }
-        if (CurrentAction == Actions.Mine && ActionComplete == false)
-        {
-            // first check that square is correct
-            if (!CheckMap(Building.BuildingType.Mine, Position))
-                return; // if the building required doesnt exist then return
-            // second check the required people are here
-            //third check the required resources are here
-        }
-        if (CurrentAction == Actions.Quarry && ActionComplete == false)
-        {
-            // first check that square is correct
-            if (!CheckMap(Building.BuildingType.Quarry, Position))
-                return; // if the building required doesnt exist then return
-            // second check the required people are here
-            //third check the required resources are here
-        }
-        if (CurrentAction == Actions.Saw_Wood && ActionComplete == false)
-        {
-            // first check that square is correct
-            if (!CheckMap(Building.BuildingType.Sawmill, Position))
-                return; // if the building required doesnt exist then return
-            // second check the required people are here
-            //third check the required resources are here
-        }
-        if (CurrentAction == Actions.Smelt && ActionComplete == false)
-        {
-            // first check that square is correct
-            if (!CheckMap(Building.BuildingType.Smelter, Position))
-                return; // if the building required doesnt exist then return
-            // second check the required people are here
-            //third check the required resources are here
-        }
-        if (CurrentAction == Actions.Store && ActionComplete == false)
-        {
-            // first check that square is correct
-            if (!CheckMap(Building.BuildingType.Storage, Position))
-                return; // if the building required doesnt exist then return
-            // second check the required people are here
-            //third check the required resources are here
-        }
-        if (CurrentAction == Actions.Train && ActionComplete == false)
-        {
-            // first check that square is correct
-            if (!CheckMap(Building.BuildingType.School, Position))
-                return; // if the building required doesnt exist then return
-            // second check the required people are here
-            //third check the required resources are here
-        }
-        // fourth start the timer
-        if (CurrentActionTime >= ActionTime)
+            // need to add a ref to the physical tree
+            if (ToCut != null)
+                ToCut.CUT();
+            Inventory = Items.Timber;
             ActionComplete = true;
-        // finally once time is complete remove required resources if needed
-        // add produced resources
-        if (CurrentAction == Actions.Buy_Sell && ActionComplete == true)
-        { }
-        if (CurrentAction == Actions.Combat && ActionComplete == true)
-        { }
-        if (CurrentAction == Actions.Cut_Tree && ActionComplete == true)
-        { }
-        if (CurrentAction == Actions.Educate && ActionComplete == true)
-        { }
-        if (CurrentAction == Actions.Educate_Barracks && ActionComplete == true)
-        { }
-        if (CurrentAction == Actions.Family && ActionComplete == true)
-        { }
-        if (CurrentAction == Actions.Family_House && ActionComplete == true)
-        { }
-        if (CurrentAction == Actions.Make_Tool && ActionComplete == true)
-        { }
-        if (CurrentAction == Actions.Mine && ActionComplete == true)
-        { }
-        if (CurrentAction == Actions.Quarry && ActionComplete == true)
-        { }
-        if (CurrentAction == Actions.Saw_Wood && ActionComplete == true)
-        { }
-        if (CurrentAction == Actions.Smelt && ActionComplete == true)
-        { }
-        if (CurrentAction == Actions.Store && ActionComplete == true)
-        { }
-        if (CurrentAction == Actions.Train && ActionComplete == true)
-        { }
-    }
-    public bool CheckMap(Building.BuildingType Check ,Vector2 pos)
-    {
-        char[,] map = new char[1,1]; // temp until map storage is decieded
-        // if the map location contains the equavalent enum then return true
-        if (Check == Building.BuildingType.Barracks && map[(int)pos.x, (int)pos.y] == 'B')
-            return true;
-        if (Check == Building.BuildingType.Blacksmith && map[(int)pos.x, (int)pos.y] == 'L')
-            return true;
-        if (Check == Building.BuildingType.House && map[(int)pos.x, (int)pos.y] == 'H')
-            return true;
-        if (Check == Building.BuildingType.Market && map[(int)pos.x, (int)pos.y] == 'M')
-            return true;
-        if (Check == Building.BuildingType.Mine && map[(int)pos.x, (int)pos.y] == 'N')
-            return true;
-        if (Check == Building.BuildingType.Quarry && map[(int)pos.x, (int)pos.y] == 'Q')
-            return true;
-        if (Check == Building.BuildingType.Sawmill && map[(int)pos.x, (int)pos.y] == 'S')
-            return true;
-        if (Check == Building.BuildingType.School && map[(int)pos.x, (int)pos.y] == 'C')
-            return true;
-        if (Check == Building.BuildingType.Smelter && map[(int)pos.x, (int)pos.y] == 'M')
-            return true;
-        if (Check == Building.BuildingType.Storage && map[(int)pos.x, (int)pos.y] == 'T')
-            return true;
-        if (Check == Building.BuildingType.Turf && map[(int)pos.x, (int)pos.y] == 'U')
-            return true;
-
-        return false;
+        }
+        if (CurrentAction == Actions.Educate)
+        {
+            // need a ref to the other student
+            ActionComplete = true; // the reason for this is because we already assume both are correct in POS
+            // and timer has started and conculded to get to this case , and skill has been assigned
+        }
+        if (CurrentAction == Actions.Educate_Barracks)
+        {
+            ActionComplete = true; // as above
+        }
+        if (CurrentAction == Actions.Family)
+        {
+            if (Preg != null)
+                Preg(Position);
+            Preg = null;
+            ActionComplete = true;
+        }
+        if (CurrentAction == Actions.Family_House)
+        {
+            if (Preg != null)
+                Preg(Position);
+            Preg = null;
+            ActionComplete = true;
+        }
+        if (CurrentAction == Actions.Make_Tool)
+        {
+            LocationAction.DropOff(ItemAction); // add the item to the smithy
+            ActionComplete = true;
+        }
+        if (CurrentAction == Actions.Mine)
+        {
+            Inventory = ItemAction;
+            ActionComplete = true;
+        }
+        if (CurrentAction == Actions.Quarry)
+        {
+            Inventory = ItemAction;
+            ActionComplete = true;
+        }
+        if (CurrentAction == Actions.Saw_Wood)
+        {
+            LocationAction.Saw();
+            ActionComplete = true;
+        }
+        if (CurrentAction == Actions.Smelt)
+        {
+            LocationAction.Smelt();
+            ActionComplete = true;
+        }
+        if (CurrentAction == Actions.Store)
+        {
+            LocationAction.Store(ItemAction);
+            ActionComplete = true;
+        }
+        if (CurrentAction == Actions.Train)
+        {
+            ActionComplete = true; // the reason for this is because we already assume both are correct in POS
+            // and timer has started and conculded to get to this case , and skill has been assigned
+        }
     }
 
 }

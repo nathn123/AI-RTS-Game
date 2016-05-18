@@ -7,7 +7,9 @@ using System;
 public class MapGen : MonoBehaviour {
 
 	// Use this for initialization
-    public GameObject Walkable,Grass, Trees, Swamp, Water, OutOfBounds;
+    public GameObject Walkable, Grass, Trees, Swamp, Water, OutOfBounds, Entrance,
+                    Barracks, School, Storage, Sawmill, Blacksmith, Turf, Smelter, House,
+                    Mine, Quarry, Market;
     int tilesize = 32;
     char[,] AiMap;
     GameObject[,] GameMap;
@@ -97,6 +99,54 @@ public class MapGen : MonoBehaviour {
                     case 'W':
                          VisualMap[i, j] = GameObject.Instantiate(Water,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
                         // WATER
+                        break;
+                    case 'E':
+                        VisualMap[i, j] = GameObject.Instantiate(Entrance,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
+                        //Building Entrance Universal and Walkable
+                        break;
+                    case '1':
+                        VisualMap[i, j] = GameObject.Instantiate(Barracks,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
+                        // Barracks
+                        break;
+                    case '2':
+                        VisualMap[i, j] = GameObject.Instantiate(School,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
+                        //School
+                        break;
+                    case '3':
+                        VisualMap[i, j] = GameObject.Instantiate(Storage,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
+                        //Storage
+                        break;
+                    case '4':
+                        VisualMap[i, j] = GameObject.Instantiate(Sawmill,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
+                        //sawmill
+                        break;
+                    case '5':
+                        VisualMap[i, j] = GameObject.Instantiate(Blacksmith,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
+                        //blacksmith
+                        break;
+                    case '6':
+                        VisualMap[i, j] = GameObject.Instantiate(Turf,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
+                        //Turf
+                        break;
+                    case '7':
+                        VisualMap[i, j] = GameObject.Instantiate(Smelter,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
+                        //Smelter
+                        break;
+                    case '8':
+                        VisualMap[i, j] = GameObject.Instantiate(House,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
+                        //HOuse
+                        break;
+                    case '9':
+                        VisualMap[i, j] = GameObject.Instantiate(Mine,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
+                        //Mine
+                        break;
+                    case '0':
+                        VisualMap[i, j] = GameObject.Instantiate(Quarry,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
+                        //Quarry
+                        break;
+                    case '-':
+                        VisualMap[i, j] = GameObject.Instantiate(Market,new Vector3(i,j,0),Quaternion.identity) as GameObject;//sprite goes here
+                        //Market
                         break;
                 }
             }

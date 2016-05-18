@@ -87,6 +87,7 @@ public class VillageManager {
     {
         public int TaskID, PathID;
         public List<TaskPlanning.Task> Stepsneeded;
+        public Building BuildingSite;
         public ObjectiveTypes Type;
         public bool complete;
         public void SetSteps(List<TaskPlanning.Task> newSteps)
@@ -126,7 +127,9 @@ public class VillageManager {
         RequestPath();
         
         // must have a global objective / now we need to set sub-objectives ????
-
+        foreach (var Objective in CurrentObj)
+            if (ObjectiveReady(Objective))
+                AssignTasks(Objective);
         ObjectiveCompleted();
         Debug.Log("Villager Manager run");
         TaskPlanner.Update();
@@ -189,6 +192,7 @@ public class VillageManager {
         newTask.Type = Type;
         newTask.PathID = -1;
         newTask.TaskID = TaskPlanner.RequestTask(goal);
+        newTask.BuildingSite = goal.Site;
         newTask.Stepsneeded = new List<TaskPlanning.Task>();
         Debug.Log("new task created Type : " + Type.ToString());
         CurrentObj.Add(newTask);
@@ -206,7 +210,7 @@ public class VillageManager {
                     continue; // means a path has been asked for
                 if (CurrentObj[i].Stepsneeded[j].Path.Start.x == float.MaxValue)
                 {
-                    CurrentObj[i].Stepsneeded[j].SetComplete(true);
+                    CurrentObj[i].Stepsneeded[j].Path.Complete = true;
                     continue;
                 }
                 //add the path
@@ -224,8 +228,10 @@ public class VillageManager {
                 //task recieved we need to check for paths now
                 for(int j= 0; j < CurrentObj[i].Stepsneeded.Count; j++)
                 {
+                    if (CurrentObj[i].Stepsneeded[j].PathID == -1 || CurrentObj[i].Stepsneeded[j].complete)
+                        continue;
                     if (PathPlanner.PathReady(CurrentObj[i].Stepsneeded[j].PathID))
-                        CurrentObj[i].Stepsneeded[j].SetPath( PathPlanner.GetPath(CurrentObj[i].Stepsneeded[j].PathID));
+                        CurrentObj[i].Stepsneeded[j].SetPath(PathPlanner.GetPath(CurrentObj[i].Stepsneeded[j].PathID));
                 }
             }
             else if (CurrentObj[i].Stepsneeded.Count == 0)
@@ -612,6 +618,7 @@ public class VillageManager {
     Building GenerateBuildingSite(Building.BuildingType Type)
     {
         Building NewBuilding = new Building();
+        char BuildingChar = ' ';
         Vector2 NewPos = new Vector2(), dimensions = new Vector2();
         // need to setup building site somewhere on the map
         if (Type == Building.BuildingType.Barracks || Type == Building.BuildingType.School || Type == Building.BuildingType.Storage || Type == Building.BuildingType.Sawmill || Type == Building.BuildingType.Blacksmith)
@@ -649,12 +656,47 @@ public class VillageManager {
             }
             range += 20;
 	    } while (!FoundPos);
-        NewBuilding.Initialise(NewPos,dimensions, new List<Villager.Items>());
+        if (Type == Building.BuildingType.Barracks)
+            BuildingChar = '1';
+        else if (Type == Building.BuildingType.School )
+            BuildingChar = '2';
+        else if (Type == Building.BuildingType.Storage)
+            BuildingChar = '3';
+        else if (Type == Building.BuildingType.Sawmill )
+            BuildingChar = '4';
+        else if (Type == Building.BuildingType.Blacksmith)
+            BuildingChar = '5';
+        else if (Type == Building.BuildingType.Turf )
+            BuildingChar = '6';
+        else if (Type == Building.BuildingType.Smelter)
+            BuildingChar = '7';
+        else if (Type == Building.BuildingType.House)
+            BuildingChar = '8';
+        else if (Type == Building.BuildingType.Mine )
+            BuildingChar = '9';
+        else if (Type == Building.BuildingType.Quarry )
+            BuildingChar = '0';
+        else if (Type == Building.BuildingType.Market)
+            BuildingChar = '-';
+
+        for (int i = 0; i < dimensions.x; i++)
+            for (int j = 0; j < dimensions.y; j++)
+            {
+                AiMap[(int)NewPos.x + i, (int)NewPos.y + j] = BuildingChar;
+            }
+        AiMap[(int)NewPos.x, (int)NewPos.y] = 'E';
+        NewBuilding.Initialise(NewPos,dimensions, Type);
         return NewBuilding;
     }
     bool CheckMapArea(Vector2 Pos, Vector2 Dimensions)
     {
-        return true;
+        for (int i = 0; i < Dimensions.x; i++)
+            for (int j = 0; j < Dimensions.y;j++)
+            {
+                if (!PathPlanning.Walkable(AiMap, new Vector2(Pos.x + i, Pos.y + j)))
+                    return false;
+            }
+                return true;
     }
     bool ObjectiveCompleted(ObjectiveTasks Current)
     {
@@ -666,5 +708,112 @@ public class VillageManager {
         Current.complete = true;
         return true;
     }
+
+    bool ObjectiveReady(ObjectiveTasks Current)
+    {
+        if (Current.Stepsneeded.Count == 0)
+            return false;
+        foreach (var Steps in Current.Stepsneeded)
+            if (Steps.Path.Complete == false)
+                return false;
+
+        return true;
+    }
+    void AssignTasks(ObjectiveTasks CurrentObj)
+    {
+        Debug.Log("Start Assign Task");
+        bool villagerFree = true;
+        // at this point all tasks and paths are ready
+        for(int i = 0; i < CurrentObj.Stepsneeded.Count; i++)
+        {
+            // we will add a list of callbacks to the stepsneeded struct,
+            // these callbacks when all true will update the step as complete
+            if (CurrentObj.Stepsneeded[i].complete)
+                continue; // move to next task
+            foreach (var vill in CurrentObj.Stepsneeded[i].villager)
+                if (vill.CurrentAction != Villager.Actions.None)
+                {
+                    villagerFree = false;
+                    break;
+                }
+            if (!villagerFree)
+                continue;
+            for (int j = 0; j < CurrentObj.Stepsneeded[i].villager.Count;j++ )
+            {
+                var Vill = CurrentObj.Stepsneeded[i].villager[j];
+                // here we are ready, the correct task is selected and all the villagers required are free
+                if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Walk)
+                {
+                    // only one villager, give the path
+                    Vill.AddPath(CurrentObj.Stepsneeded[i].Path.Path);
+                    Vill.SetAction(CurrentObj.Stepsneeded[i].Action);
+                   
+                    
+                }
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Build)
+                {
+                    if (CurrentObj.Stepsneeded[i].ToBeBuilt == Building.BuildingType.Barracks)            Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 30.0f);
+                    else if (CurrentObj.Stepsneeded[i].ToBeBuilt == Building.BuildingType.Blacksmith)     Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 30.0f);
+                    else if (CurrentObj.Stepsneeded[i].ToBeBuilt == Building.BuildingType.House)          Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 15.0f);
+                    else if (CurrentObj.Stepsneeded[i].ToBeBuilt == Building.BuildingType.Market)         Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 5.0f);
+                    else if (CurrentObj.Stepsneeded[i].ToBeBuilt == Building.BuildingType.Mine)           Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 50.0f);
+                    else if (CurrentObj.Stepsneeded[i].ToBeBuilt == Building.BuildingType.Quarry)         Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 10.0f);
+                    else if (CurrentObj.Stepsneeded[i].ToBeBuilt == Building.BuildingType.Sawmill)        Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 30.0f);
+                    else if (CurrentObj.Stepsneeded[i].ToBeBuilt == Building.BuildingType.School)         Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 30.0f);
+                    else if (CurrentObj.Stepsneeded[i].ToBeBuilt == Building.BuildingType.Smelter)        Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 20.0f);
+                    else if (CurrentObj.Stepsneeded[i].ToBeBuilt == Building.BuildingType.Storage)        Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 20.0f);
+                    else if (CurrentObj.Stepsneeded[i].ToBeBuilt == Building.BuildingType.Turf)           Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 10.0f);
+                }
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Buy_Sell)
+                    Vill.SetAction(CurrentObj.Stepsneeded[i].Action, 1.0f);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Combat)
+                    Vill.SetAction(CurrentObj.Stepsneeded[i].Action, 1.0f);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Store)
+                    Vill.SetAction(CurrentObj.Stepsneeded[i].Action, 1.0f);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Cut_Tree)    Vill.SetAction(CurrentObj.Stepsneeded[i].Action, 5.0f);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Educate)        Vill.SetAction(CurrentObj.Stepsneeded[i].Action, 100.0f);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Educate_Barracks)    Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 30.0f);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Family)  Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 20.0f);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Family_House) Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 20.0f);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Make_Tool) Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse,CurrentObj.Stepsneeded[i].ItemRequired, 10.0f);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Mine)       Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 5.0f);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Pickup)    Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse,CurrentObj.Stepsneeded[i].ItemRequired);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Putdown)   Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse,CurrentObj.Stepsneeded[i].ItemRequired);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Quarry) Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 5.0f);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Saw_Wood) Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 10.0f);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Smelt) Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 5.0f);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Train) Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 50.0f);
+            }
+            // we put special cases like ... skills to learn
+
+            if(CurrentObj.Stepsneeded[i].Action == Villager.Actions.Train ||
+               CurrentObj.Stepsneeded[i].Action == Villager.Actions.Educate)
+            {
+                // should be two JiC first found with labourer skill
+                    if (CurrentObj.Stepsneeded[i].villager[0].Skill == Villager.Skills.Labourer)
+                    {
+                        CurrentObj.Stepsneeded[i].villager[0].LearnSkill(CurrentObj.Stepsneeded[i].SkillToBeLearnt, CurrentObj.Stepsneeded[i].villager[1]);
+                    }
+            }
+            if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Family)
+                CurrentObj.Stepsneeded[i].villager[0].Preg = AddVillager;
+            else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Family_House)
+            {
+                CurrentObj.Stepsneeded[i].villager[0].Preg = AddVillager;
+                CurrentObj.Stepsneeded[i].villager[1].Preg = AddVillager;
+            }
+        }
+    }
+    public delegate void NewVillager(Vector2 Pos);
+
+    public void AddVillager(Vector2 Pos)
+    {
+        
+        var newVill = ((GameObject.Instantiate(MaleVillager, new Vector3(Pos.x, Pos.y), Quaternion.identity) as GameObject).GetComponent<Villager>());
+        newVill.Initialise(Pos);
+        Villagers.Add(newVill);
+        AvailableVillagers.Add(newVill);
+    }
+
 
 }
