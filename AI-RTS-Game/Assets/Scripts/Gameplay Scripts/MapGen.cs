@@ -11,7 +11,7 @@ public class MapGen : MonoBehaviour {
                     Barracks, School, Storage, Sawmill, Blacksmith, Turf, Smelter, House,
                     Mine, Quarry, Market;
     int tilesize = 32;
-    char[,] AiMap, PrevMap;
+    static char[,] AiMap, PrevMap;
     GameObject[,] GameMap;
     bool Initialised = false;
 	public void Start () {
@@ -32,7 +32,6 @@ public class MapGen : MonoBehaviour {
        StreamReader Mapreader = new StreamReader(path);
        Mapreader.ReadLine();
        var htext = Mapreader.ReadLine().Split(' ')[1];
-       print(htext);
        var wtext = Mapreader.ReadLine().Split(' ')[1];
        Mapreader.ReadLine();
        var height  = Int32.Parse(htext);
@@ -76,6 +75,7 @@ public class MapGen : MonoBehaviour {
             {
                if(PrevMap[i,j] != AiMap[i,j])
                {
+                   GameObject.DestroyImmediate(VisualMap[i, j]);
                    switch (AiMap[i, j])
                    {
                        case '.':
@@ -166,9 +166,14 @@ public class MapGen : MonoBehaviour {
         PrevMap = AiMap;
     }
 
-    public void GetMap(ref char[,] map)
+    public static Char[,] GetMap()
     {
-        map = AiMap;
+        return AiMap;
+    }
+
+    public static void UpdateMap(Vector2 Pos, char Val)
+    {
+        AiMap[(int)Pos.x, (int)Pos.y] = Val;
     }
 
     public Vector2 GetPosition(Vector2 position)

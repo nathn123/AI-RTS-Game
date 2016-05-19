@@ -113,7 +113,8 @@ public class VillageManager {
         // duplicate maps updated with villager FOV  - large memory footprint ???? although only double char arrays 
         if (!Initialised)
             return;
-
+        //update map
+        AiMap = MapGen.GetMap();
         starttime = Time.time;
         // after each step  we need to do to ensure it has time availiable
         if (checktime())
@@ -133,7 +134,6 @@ public class VillageManager {
             if (ObjectiveReady(Objective))
                 AssignTasks(Objective);
         ObjectiveCompleted();
-        Debug.Log("Villager Manager run");
         TaskPlanner.Update();
         PathPlanner.Update();
 	}
@@ -271,7 +271,7 @@ public class VillageManager {
         }
         // now we take stock of what we have, to deciede what we need
         int TotPop = 0, Labs = 0, Rifle = 0, Trader = 0, BlacksP = 0, Mine = 0, Lumber = 0, Carp = 0,
-            Turf = 0, House = 0, Scho = 0, Barr = 0, Stora = 0, MineB = 0, Smelt = 0, Quar = 0, Saw = 0, BlacksB = 0, Mark = 0;
+            Turf = 0, House = 0, Scho = 0, Barr = 0, Stora = 0, MineB = 0, Smelt = 0, Quar = 0, Saw = 0, BlacksB = 0, Mark = 0, TotBuild = 0;
         foreach(var villager in Villagers)
         {
             TotPop++; // total population
@@ -315,6 +315,7 @@ public class VillageManager {
             else if (building.Type == Building.BuildingType.Turf)
                 Turf++;
         }
+        TotBuild = Barr + BlacksB + House + Mark + MineB + Quar + Saw + Scho + Smelt + Stora + Turf;
         // and finally we take stock of the items
         int stone = 0 , wood = 0 , iron = 0 , timber = 0, ore = 0, coal = 0, axe = 0, cart = 0, RifleI = 0, MoneyI = 0, goods = 0;
 
@@ -394,7 +395,8 @@ public class VillageManager {
             GoalState newGoal = new GoalState();
             newGoal.NewBuildings = Building.BuildingType.None;
             newGoal.NewSkills = new List<Villager.Skills>();
-            if(Labs < TotPop *0.25f && Pop < ObjCap && House > 0) // Increase Pop
+            // Need to add a case for FORCED waiting to breed
+            if( TotPop <= Mathf.FloorToInt(TotBuild * 0.75f)&& (House > 0 || Turf > 0)) // Increase Pop
             {
 
                 // we need to gen a current state / decide what is going to be used here.
@@ -402,8 +404,7 @@ public class VillageManager {
                 newGoal.AddNewSkills(Villager.Skills.Labourer);
                 NeededSkills.Add(Villager.Skills.Any);
                 NeededSkills.Add(Villager.Skills.Any);
-                noneselected = 1;
-                Pop++;
+                Pop++;// this SHOULD continually fail the second check until 2 vills are avaliable
             }
             else if (ARes < ObjCap && BlacksB > 0 && BlacksP > 0) // IncreaseAdvResources -rifles /carts axes
             {
@@ -482,7 +483,7 @@ public class VillageManager {
             else if (Spec < ObjCap) // IncreaseSpecialistBuilding
             {
                 newObj = ObjectiveTypes.IncreaseSpecialistBuilding;
-                if(Smelt > 0)
+                if (Smelt > 0 && Quar > 0)
                 {
                     if(Scho == 0) // build school
                     {
@@ -548,7 +549,7 @@ public class VillageManager {
                         Spec++;
                     }
                 }
-                else // build smelter
+                else if (Quar > 0) // build smelter
                 {
                     newGoal.NewBuildings = Building.BuildingType.Smelter;
                     NeededSkills.Add(Villager.Skills.Labourer);
@@ -557,15 +558,28 @@ public class VillageManager {
                     Buildings.Add(building);
                     Spec++;
                 }
+                else // build quarry
+                {
+                    newGoal.NewBuildings = Building.BuildingType.Quarry;
+                    NeededSkills.Add(Villager.Skills.Labourer);
+                    var building = GenerateBuildingSite(Building.BuildingType.Quarry);
+                    newGoal.Site = building;
+                    Buildings.Add(building);
+                    Spec++;
+                }
             }
             else
                 noneselected++;
-            if(GenerateGameState(NeededSkills,ref newGoal.GameState,NeedTree))
-                PassGoal(newGoal, newObj);
+            if (NeededSkills.Count != 0)
+                if (GenerateGameState(NeededSkills, ref newGoal.GameState, NeedTree))
+                    PassGoal(newGoal, newObj);
+                else noneselected++;
+
+            if (noneselected >= 20)
+                return; // no objective set
                 
         } 
-        if (noneselected >= 20)
-            return; // no objective set
+
     }
     bool GenerateGameState(List<Villager.Skills> NeededSkills, ref GameState State, bool Trees)
     {
@@ -591,7 +605,7 @@ public class VillageManager {
                     else
                         runcount++;
                 }
-        } while (NeededSkills.Count > 0 && runcount > (NeededSkills.Count * 2) * AvailableVillagers.Count);
+        } while (NeededSkills.Count > 0 && runcount < (NeededSkills.Count * 2) * AvailableVillagers.Count);
         if (NeededSkills.Count > 0)
         {
             AvailableVillagers.AddRange(State.Villagers);
@@ -622,6 +636,8 @@ public class VillageManager {
                 List<Villager> VillagersNowFree = new List<Villager>();
                 for (int j = 0; j < CurrentObj[i].Stepsneeded.Count;j++)
                 {
+                    if (!Buildings.Contains(CurrentObj[i].BuildingSite))
+                     Buildings.Add(CurrentObj[i].BuildingSite);
                     for (int p = 0; p < CurrentObj[i].Stepsneeded[j].villager.Count; p++)
                         if (!VillagersNowFree.Contains(CurrentObj[i].Stepsneeded[j].villager[p]))
                             VillagersNowFree.Add(CurrentObj[i].Stepsneeded[j].villager[p]);
@@ -698,9 +714,9 @@ public class VillageManager {
         for (int i = 0; i < dimensions.x; i++)
             for (int j = 0; j < dimensions.y; j++)
             {
-                AiMap[(int)NewPos.x + i, (int)NewPos.y + j] = BuildingChar;
+                MapGen.UpdateMap( new Vector2((int)NewPos.x + i, (int)NewPos.y + j) , BuildingChar);
             }
-        AiMap[(int)NewPos.x, (int)NewPos.y] = 'E';
+        MapGen.UpdateMap(new Vector2((int)NewPos.x, (int)NewPos.y),'E');
         NewBuilding.Initialise(NewPos,dimensions, Type);
         return NewBuilding;
     }
@@ -709,8 +725,11 @@ public class VillageManager {
         for (int i = 0; i < Dimensions.x; i++)
             for (int j = 0; j < Dimensions.y;j++)
             {
-                if (!PathPlanning.Walkable(AiMap, new Vector2(Pos.x + i, Pos.y + j)) && AiMap[(int)Pos.x + i, (int)Pos.y + j] != 'E')
+                if (!PathPlanning.Buildable(AiMap, new Vector2(Pos.x + i, Pos.y + j)))
+                {
+                    Debug.Log("MapSquareTaken = " + new Vector2(Pos.x + i, Pos.y + j).ToString() + "Char Val = " + AiMap[(int)Pos.x + i, (int)Pos.y + j].ToString());
                     return false;
+                }
             }
                 return true;
     }
@@ -737,7 +756,6 @@ public class VillageManager {
     }
     void AssignTasks(ObjectiveTasks CurrentObj)
     {
-        Debug.Log("Start Assign Task");
         bool villagerFree = true;
         // at this point all tasks and paths are ready
         for(int i = 0; i < CurrentObj.Stepsneeded.Count; i++)

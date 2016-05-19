@@ -2,20 +2,52 @@
 <Durative-FF-Depend>
 <Operator>
 <Name>
-(WALK VILLAGER_0 START_0 BUILDINGSITE)</Name>
+(WALK VILLAGER_0 START_0 BUILDING_1)</Name>
 
 </Operator>
 
 <Operator>
 <Name>
-(BUILD_TURF VILLAGER_0 BUILDINGSITE)</Name>
+(WALK VILLAGER_1 START_1 BUILDING_1)</Name>
+
+</Operator>
+
+<Operator>
+<Name>
+(FAMILY VILLAGER_0 VILLAGER_1 BUILDING_1)</Name>
 
 <Depend>
  
 <On_Operator>
  
 <Name>
-(WALK VILLAGER_0 START_0 BUILDINGSITE)
+(WALK VILLAGER_0 START_0 BUILDING_1)
+</Name>
+
+</On_Operator>
+ 
+<On_Operator>
+ 
+<Name>
+(WALK VILLAGER_1 START_1 BUILDING_1)
+</Name>
+
+</On_Operator>
+ 
+</Depend>
+ 
+</Operator>
+
+<Operator>
+<Name>
+(FAMILY VILLAGER_1 VILLAGER_1 BUILDING_1)</Name>
+
+<Depend>
+ 
+<On_Operator>
+ 
+<Name>
+(WALK VILLAGER_1 START_1 BUILDING_1)
 </Name>
 
 </On_Operator>

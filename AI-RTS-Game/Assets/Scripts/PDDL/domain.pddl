@@ -164,7 +164,7 @@
 	(:action Family
            :parameters (?p1 ?p2 - person ?l - location)
            :precondition (and (at ?p1 ?l)(at ?p2 ?l)(is-turfhut ?l))
-           :effect (and(isParent ?p1) (isParent ?p2)))
+           :effect (isParent ?p1))
 		   
 	(:action Family_House
            :parameters (?p1 ?p2 - person ?l - location)
@@ -218,43 +218,43 @@
            :effect (is-turfhut ?l))
 	(:action Build_House
            :parameters (?p1 - person ?p2 - person ?l - location)
-           :precondition (and (has-Stone ?l)(has-Wood ?l)(has-Carpenter ?p1) (has-Labourer ?p2)(is-BuildingSite ?l))
+           :precondition (and (at ?p1 ?l)(at ?p2 ?l)(has-Stone ?l)(has-Wood ?l)(has-Carpenter ?p1) (has-Labourer ?p2)(is-BuildingSite ?l))
            :effect (is-House ?l))
 	(:action Build_School
            :parameters (?p1 - person ?p2 - person ?l - location)
-           :precondition (and (has-Stone ?l)(has-Wood ?l)(has-Iron ?l)(has-Carpenter ?p1) (has-Labourer ?p2)(is-BuildingSite ?l))
+           :precondition (and (at ?p1 ?l)(at ?p2 ?l)(has-Stone ?l)(has-Wood ?l)(has-Iron ?l)(has-Carpenter ?p1) (has-Labourer ?p2)(is-BuildingSite ?l))
            :effect (is-School ?l))
 	(:action Build_Barracks
            :parameters (?p1 - person ?p2 - person ?l - location)
-           :precondition (and (has-Stone ?l)(has-Wood ?l)(has-Carpenter ?p1) (has-Labourer ?p2)(is-BuildingSite ?l))
+           :precondition (and (at ?p1 ?l)(at ?p2 ?l)(has-Stone ?l)(has-Wood ?l)(has-Carpenter ?p1) (has-Labourer ?p2)(is-BuildingSite ?l))
            :effect (is-Barracks ?l))
 	(:action Build_Storage
            :parameters (?p1 - person ?p2 - person ?l - location)
-           :precondition (and (has-Stone ?l)(has-Wood ?l)(has-Carpenter ?p1) (has-Labourer ?p2)(is-BuildingSite ?l))
+           :precondition (and (at ?p1 ?l)(at ?p2 ?l)(has-Stone ?l)(has-Wood ?l)(has-Carpenter ?p1) (has-Labourer ?p2)(is-BuildingSite ?l))
            :effect (is-Storage ?l))
 	(:action Build_Mine
            :parameters (?p1 - person ?p2 - person ?p3 - person ?l - location)
-           :precondition (and (has-Iron ?l)(has-Wood ?l)(has-Carpenter ?p1) (has-Labourer ?p2)(has-BlacksmithS ?p3)(is-BuildingSite ?l))
+           :precondition (and (at ?p1 ?l)(at ?p2 ?l)(has-Iron ?l)(has-Wood ?l)(has-Carpenter ?p1) (has-Labourer ?p2)(has-BlacksmithS ?p3)(is-BuildingSite ?l))
            :effect (is-Mine ?l))
 	(:action Build_Smelter
            :parameters (?p1 - person ?l - location)
-           :precondition (and (has-Stone ?l)(has-Labourer ?p1)(is-BuildingSite ?l))
+           :precondition (and (at ?p1 ?l)(has-Stone ?l)(has-Labourer ?p1)(is-BuildingSite ?l))
            :effect (is-Smelter ?l))
 	(:action Build_Quarry
            :parameters (?p1 - person ?l - location)
-           :precondition (and(has-Labourer ?p1)(is-BuildingSite ?l))
+           :precondition (and(at ?p1 ?l)(has-Labourer ?p1)(is-BuildingSite ?l))
            :effect (is-Quarry ?l))
 	(:action Build_Sawmill
            :parameters (?p1 - person ?l - location)
-           :precondition (and (has-Iron ?l)(has-Stone ?l)(has-Timber ?l) (has-Labourer ?p1)(is-BuildingSite ?l))
+           :precondition (and (at ?p1 ?l)(has-Iron ?l)(has-Stone ?l)(has-Timber ?l) (has-Labourer ?p1)(is-BuildingSite ?l))
            :effect (is-Sawmill ?l))
 	(:action Build_Blacksmith
            :parameters (?p1 - person ?l - location)
-           :precondition (and (has-Iron ?l)(has-Stone ?l)(has-Timber ?l) (has-Labourer ?p1)(at ?p1 ?l)(is-BuildingSite ?l))
+           :precondition (and (at ?p1 ?l)(has-Iron ?l)(has-Stone ?l)(has-Timber ?l) (has-Labourer ?p1)(at ?p1 ?l)(is-BuildingSite ?l))
            :effect (is-Blacksmith ?l))
 	(:action Build_Market
            :parameters (?p1 - person ?l - location)
-           :precondition (and (has-Wood ?l)(has-Carpenter ?p1)(is-BuildingSite ?l))
+           :precondition (and (at ?p1 ?l)(has-Wood ?l)(has-Carpenter ?p1)(is-BuildingSite ?l))
            :effect (is-Market_Stall ?l))
 	(:action Train_Rifleman
            :parameters (?p1 - person ?p2 - person ?l - location)

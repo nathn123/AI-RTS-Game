@@ -192,7 +192,6 @@ public class Villager : MonoBehaviour {
     // should we move this to a building script ??????
     public void DoAction() 
     {
-        Debug.Log("Villager Action");
         // not yet implemented
         // checks on the current square - prerequisites for action
         if(ActionComplete)

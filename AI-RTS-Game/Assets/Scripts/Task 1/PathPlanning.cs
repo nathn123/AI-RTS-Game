@@ -51,6 +51,8 @@ public class PathPlanning
     // Update is called once per frame
     public void Update()
     {
+        Map = MapGen.GetMap();
+
         for (int i = 0; i < Paths.Count; i++)
             if (!Paths[i].Complete)
                 StartPathPlanning(i);
@@ -95,7 +97,21 @@ public class PathPlanning
         }
         // EDIT THIS IF NEEDED
         return false;
-
+    }
+    public static bool Buildable(char[,] map, Vector2 Pos)
+    {
+        if (Pos.x > map.Length || Pos.y > map.Length)
+            return false;
+        if (Pos.x < 0 || Pos.y < 0)
+            return false;
+        char Loc = map[(int)Pos.x, (int)Pos.y];
+        if (Loc == '.' || Loc == 'G')
+        {
+            // walkable tile NOT GRASS
+            return true;
+        }
+        // EDIT THIS IF NEEDED
+        return false;
     }
     Vector2 ClosestWalkable(Vector2 Pos)
     {

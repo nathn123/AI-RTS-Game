@@ -273,8 +273,8 @@ public class TaskPlanning  {
             // find metricFF file path / execute .batfile
             mFF.StartInfo.FileName = Application.dataPath + @"/scripts/PDDL/metric-ff.exe";
             mFF.StartInfo.Arguments = string.Format("-o {0}.pddl -f {1}.pddl", domainfileloc, problemfileloc);
-            mFF.StartInfo.CreateNoWindow = true;
-            mFF.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
+            mFF.StartInfo.CreateNoWindow = false;
+            mFF.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
         }
         // run the process, and wait until it has closed
         mFF.Start();

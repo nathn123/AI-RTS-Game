@@ -17,7 +17,7 @@ public class VillageGen : MonoBehaviour {
     public void StartGame()
     {
         char[,] AiMap = new char[1, 1];
-        this.gameObject.GetComponent<MapGen>().GetMap(ref AiMap);
+        AiMap = MapGen.GetMap();
         TreeMgr.GenerateTrees(AiMap);
         for (int i = 0; i < NumofVillages; ++i)
         {
