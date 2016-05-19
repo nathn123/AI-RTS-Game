@@ -8,8 +8,8 @@ using System.Diagnostics;
 
 public class TaskPlanning  {
 
-    List<List<Task>> Plans;
-    List<VillageManager.GoalState> GoalsToAcheive;
+    Dictionary<int,List<Task>> Plans;
+    Dictionary<int,VillageManager.GoalState> GoalsToAcheive;
     Process mFF;
     string problemfileloc, domainfileloc, solutionfileloc;
     public float allowedtime,starttime, currenttime;
@@ -26,6 +26,7 @@ public class TaskPlanning  {
         public Villager.Actions Action;
         public PathPlanning.PathInfo Path;
         public Building BuildingInUse;
+        public Tree TreeInUse;
         public int PathID { get; set; }
         public bool complete { get; set; }
 
@@ -37,10 +38,11 @@ public class TaskPlanning  {
         {
             PathID = newID;
         }
-        public void SetComplete(bool comp)
+        public void SetComplete()
         {
-            complete = comp;
+            complete = true;
         }
+        public delegate void ActionComplete();
     }
     public struct Actions
     {
@@ -67,9 +69,9 @@ public class TaskPlanning  {
         problemfileloc =Application.dataPath+ @"/scripts/PDDL/problem.pddl";
         domainfileloc = Application.dataPath + @"/scripts/PDDL/domain.pddl";
         solutionfileloc = Application.dataPath + @"/scripts/PDDL/ffPSolution.soln";
-        GoalsToAcheive = new List<VillageManager.GoalState>();
+        GoalsToAcheive = new Dictionary<int,VillageManager.GoalState>();
         TempPlanStorage = new List<string[]>();
-        Plans = new List<List<Task>>();
+        Plans = new Dictionary<int,List<Task>>();
         DomainTypes = new List<Types>();
         DomainActions = new List<Actions>();
         LoadDomain();
@@ -127,12 +129,17 @@ public class TaskPlanning  {
             PreTask.PathID = -1;
             OutTask.Add(PreTask);
         }
+        Plans.Remove(planID);
+        GoalsToAcheive.Remove(planID);
+        
             return OutTask;
     }
     public bool TaskReady(int planID)
     {
         //case to check if path is done then return result
         // if struct is used for path info should be easy
+        if (!Plans.ContainsKey(planID))
+            return false;
         foreach (var task in Plans[planID])
             if (task.complete == false)
                 return false;
@@ -141,9 +148,9 @@ public class TaskPlanning  {
     public int RequestTask(VillageManager.GoalState newTask)
     {
         List<Task> newTaskList = new List<Task>();
-        GoalsToAcheive.Add(newTask);
+        GoalsToAcheive.Add(GoalsToAcheive.Count,newTask);
         var intref = GoalsToAcheive.Count - 1;
-        Plans.Insert(intref, newTaskList);
+        Plans.Add(intref, newTaskList);
         
         // add the struct 
         // get the value added at and then return
@@ -153,17 +160,26 @@ public class TaskPlanning  {
     {
         return Goal.GameState.Villagers[int.Parse(name.Split('_')[1])];
     }
-    Vector2 FindBuilding(string name, VillageManager.GoalState Goal,ref Building SelectedBuilding)
+    Vector2 FindBuilding(string name, VillageManager.GoalState Goal,ref Building SelectedBuilding,ref Tree SelectedTree)
     {
         
         if (name.Split('_')[0].Equals( "Start", System.StringComparison.InvariantCultureIgnoreCase))
             return FindVillager(name, Goal).Position;
-        if (name.Split('_')[0].Equals( "building", System.StringComparison.InvariantCultureIgnoreCase))
+        if (name.Split('_')[0].Equals("building", System.StringComparison.InvariantCultureIgnoreCase))
+        {
+            SelectedBuilding = Goal.GameState.OwnedLocations[int.Parse(name.Split('_')[1])];
             return Goal.GameState.OwnedLocations[int.Parse(name.Split('_')[1])].Position;
-        else if (name.Split('_')[0].Equals( "tree", System.StringComparison.InvariantCultureIgnoreCase))
+        }
+        else if (name.Split('_')[0].Equals("tree", System.StringComparison.InvariantCultureIgnoreCase))
+        {
+            SelectedTree = Goal.GameState.Trees[int.Parse(name.Split('_')[1])];
             return Goal.GameState.Trees[int.Parse(name.Split('_')[1])].Pos;
-        else if (name.Split('_')[0].Equals( "buildingSite", System.StringComparison.InvariantCultureIgnoreCase))
+        }
+        else if (name.Split('_')[0].Equals("buildingSite", System.StringComparison.InvariantCultureIgnoreCase))
+        {
+            SelectedBuilding = Goal.Site;
             return Goal.Site.Position;
+        }
 
         return new Vector2(float.MaxValue,float.MaxValue);
     }
@@ -209,10 +225,6 @@ public class TaskPlanning  {
                 {
                     if(action.Length>1)
                     {
-                        var test1 = !action[1].Equals(DomainActions[j].BuildType.ToString());
-                        var test2 = !action[1].Equals(DomainActions[j].ItemType.ToString(), System.StringComparison.InvariantCultureIgnoreCase);
-                        var test3 = !action[1].Equals(DomainActions[j].SkillType.ToString(), System.StringComparison.InvariantCultureIgnoreCase);
-                        var test4 = test1 && test2 && test3;
                         if (!action[1].Equals(DomainActions[j].BuildType.ToString(), System.StringComparison.InvariantCultureIgnoreCase) &&
                             !action[1].Equals(DomainActions[j].ItemType.ToString(), System.StringComparison.InvariantCultureIgnoreCase) &&
                             !action[1].Equals(DomainActions[j].SkillType.ToString(), System.StringComparison.InvariantCultureIgnoreCase))
@@ -232,15 +244,15 @@ public class TaskPlanning  {
                     {
                         // is move too action
 
-                        newTask.Path.Start = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]], Goal, ref newTask.BuildingInUse);
-                        newTask.Path.End = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[1]], Goal, ref newTask.BuildingInUse);
+                        newTask.Path.Start = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]], Goal, ref newTask.BuildingInUse,ref newTask.TreeInUse);
+                        newTask.Path.End = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[1]], Goal, ref newTask.BuildingInUse, ref newTask.TreeInUse);
                         newTask.Path.Complete = false;
                         // otherwise goal is primary location
                     }
                     else
                     {
                         newTask.Path.Start = new Vector2(float.MaxValue,float.MaxValue);
-                        newTask.Path.End = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]], Goal, ref newTask.BuildingInUse);
+                        newTask.Path.End = FindBuilding(TempPlanStorage[i][DomainActions[j].LocationParams[0]], Goal, ref newTask.BuildingInUse, ref newTask.TreeInUse);
                     }
                     newTask.complete = true;
 				TotalTasks.Add(newTask);
@@ -262,7 +274,7 @@ public class TaskPlanning  {
             mFF.StartInfo.FileName = Application.dataPath + @"/scripts/PDDL/metric-ff.exe";
             mFF.StartInfo.Arguments = string.Format("-o {0}.pddl -f {1}.pddl", domainfileloc, problemfileloc);
             mFF.StartInfo.CreateNoWindow = true;
-            mFF.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            mFF.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
         }
         // run the process, and wait until it has closed
         mFF.Start();
@@ -338,7 +350,6 @@ public class TaskPlanning  {
         for (int i = 0; i < domainActions.Count(); i++)
         {
             Actions newAction = new Actions();
-            var test = Villager.Actions.Cut_Tree.ToString();
             newAction.PersonParams = new List<int>();
             newAction.LocationParams = new List<int>();
             newAction.ItemParams = new List<int>();
@@ -510,7 +521,7 @@ public class TaskPlanning  {
                 skill = "Trader";
             else
                 continue;
-            writer.WriteLine("(has-"+skill+" "+"villager_"+i.ToString()+")");
+            writer.WriteLine("(has-"+skill+"  "+"villager_"+i.ToString()+")");
             if (Goal.GameState.Villagers[i].Inventory == Villager.Items.Stone)
                 item = "Stone";
             else if (Goal.GameState.Villagers[i].Inventory == Villager.Items.Wood)
@@ -536,8 +547,8 @@ public class TaskPlanning  {
             else
                 item  = "";
 			if(item != "")
-            	writer.WriteLine("(has-" + item + " " + "villager_" + i.ToString() + ")");
-            writer.WriteLine("(at villager_"+i.ToString()+" Start_"+i.ToString() + ")"); // so all villagers start at an arbitrary possition based on their current position at time of planning
+            	writer.WriteLine("(has-" + item + "  " + "villager_" + i.ToString() + ")");
+            writer.WriteLine("(at villager_"+i.ToString()+"  Start_"+i.ToString() + ")"); // so all villagers start at an arbitrary possition based on their current position at time of planning
         }
        
         for (int i = 0; i < Goal.GameState.OwnedLocations.Count; i++)
@@ -567,7 +578,7 @@ public class TaskPlanning  {
                 location = "turfhut";
             else if (Goal.GameState.OwnedLocations[i].Type == Building.BuildingType.buildingSite)
                 continue;
-            writer.WriteLine("(is-" + location + " building_" + i.ToString() + ")");
+            writer.WriteLine("(is-" + location + "  building_" + i.ToString() + ")");
             foreach(var Item in Goal.GameState.OwnedLocations[i].Items)
             {
                 string item;
@@ -686,7 +697,7 @@ public class TaskPlanning  {
                         ItemName.Add("Trader");
                 }
                 for (int i = 0; i < Goal.NewSkills.Count; i++)
-                    writer.WriteLine("(has-" + ItemName[i] + StudentName[i] + ")");
+                    writer.WriteLine("(has-" + ItemName[i]+" " + StudentName[i] + ")");
             }
         }
         else if(Goal.NewItems != null)
@@ -730,6 +741,7 @@ public class TaskPlanning  {
         writer.Write(")");
         writer.Write(")");
         writer.Write(")");
+        writer.Close();
         writer.Dispose();
         return true;
     }

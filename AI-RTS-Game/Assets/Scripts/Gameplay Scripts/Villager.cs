@@ -67,6 +67,7 @@ public class Villager : MonoBehaviour {
     public Items ItemAction;
     public Tree ToCut;
     public VillageManager.NewVillager Preg;
+    public TaskPlanning.Task.ActionComplete ActionCallback;
     public Skills Skill;
     public bool ActionComplete;
     bool Initialised = false, Timer = false;
@@ -98,11 +99,14 @@ public class Villager : MonoBehaviour {
         // if it has a path it should move
         if (Path.Count > 0)
             Move();
+        if (CurrentAction == Actions.Walk && Path.Count == 0)
+        {
+            CurrentAction = Actions.None;
+            ActionComplete = true;
+        }
         // if at path goal then do Action
         if (CurrentAction != Actions.Walk && CurrentActionTime >= ActionTime)
             DoAction();
-        else if (CurrentAction == Actions.Walk && Path.Count == 0)
-            CurrentAction = Actions.None;
 
         if (Timer)
             CurrentActionTime += Time.deltaTime;
@@ -119,11 +123,19 @@ public class Villager : MonoBehaviour {
         CurrentActionTime = 0;
         CurrentAction = NewAction;
         ActionTime = ActionTime_;
-        Timer = false;
+        Timer = true;
+    }
+    public void SetAction(Villager.Actions NewAction,Tree TreeInUse, float ActionTime_ = 0)
+    {
+        CurrentActionTime = 0;
+        CurrentAction = NewAction;
+        ActionTime = ActionTime_;
+        ToCut = TreeInUse;
+        Timer = true;
     }
     public void SetAction(Villager.Actions NewAction, Building Location, Items Item, float ActionTime_ = 0)
     {
-        Timer = false;
+        Timer = true;
         CurrentActionTime = 0;
         ActionTime = ActionTime_;
         // for pick up and put down Is instant
@@ -150,7 +162,7 @@ public class Villager : MonoBehaviour {
         CurrentActionTime = 0;
         CurrentAction = NewAction;
         LocationAction = Location;
-        Timer = false;
+        Timer = true;
     }
     public void LearnSkill(Villager.Skills newSkills, Villager Teach)
     {
@@ -186,6 +198,9 @@ public class Villager : MonoBehaviour {
         if(ActionComplete)
         {
             CurrentAction = Actions.None;
+            if(ActionCallback != null)
+                ActionCallback();
+            ActionCallback = null;
             ActionComplete = false;
             LocationAction = null;
             Timer = false;
@@ -201,6 +216,11 @@ public class Villager : MonoBehaviour {
         if (CurrentAction == Actions.Combat)
         {
 
+        }
+        if (CurrentAction == Actions.Build)
+        {
+            LocationAction.Built();
+            ActionComplete = true;
         }
         if (CurrentAction == Actions.Cut_Tree)
         {

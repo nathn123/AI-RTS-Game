@@ -54,6 +54,7 @@ public class VillageManager {
         public Building Site;
         public List<Villager.Items> NewItems;
         public List<Villager.Skills> NewSkills;
+        bool Run;
         // only storing new values otherwise we would have to calculate the future gamestate too much effort
         public GameState GameState; // moved to here as these are the objects needed for the task
         public void AddNewSkills(Villager.Skills Skills)
@@ -120,11 +121,12 @@ public class VillageManager {
 
         //do we have an objective set
         CheckRetrieveTask();
+        RequestPath();
         if (CurrentObj.Count < MaxTasks)
             GenerateNewTask();
         if (checktime())
             return;
-        RequestPath();
+        
         
         // must have a global objective / now we need to set sub-objectives ????
         foreach (var Objective in CurrentObj)
@@ -135,7 +137,7 @@ public class VillageManager {
         TaskPlanner.Update();
         PathPlanner.Update();
 	}
-        bool checktime()
+    bool checktime()
     {
         //if (Time.time - starttime > allowedtime)
         //    return true;
@@ -201,14 +203,14 @@ public class VillageManager {
     {
         for (int i = 0; i < CurrentObj.Count; i++)
         {
-            if (CurrentObj[i].Stepsneeded == null)
+            if (CurrentObj[i].Stepsneeded.Count == 0)
                 return;
             for(int j= 0; j < CurrentObj[i].Stepsneeded.Count;j++)
             {
                 // check to see if path is needed
                 if (CurrentObj[i].Stepsneeded[j].PathID != -1)
                     continue; // means a path has been asked for
-                if (CurrentObj[i].Stepsneeded[j].Path.Start.x == float.MaxValue)
+                if (CurrentObj[i].Stepsneeded[j].Path.Start.x == float.MaxValue || CurrentObj[i].Stepsneeded[j].Path.Start == CurrentObj[i].Stepsneeded[j].Path.End)
                 {
                     CurrentObj[i].Stepsneeded[j].Path.Complete = true;
                     continue;
@@ -228,7 +230,7 @@ public class VillageManager {
                 //task recieved we need to check for paths now
                 for(int j= 0; j < CurrentObj[i].Stepsneeded.Count; j++)
                 {
-                    if (CurrentObj[i].Stepsneeded[j].PathID == -1 || CurrentObj[i].Stepsneeded[j].complete)
+                    if (CurrentObj[i].Stepsneeded[j].PathID == -1 || CurrentObj[i].Stepsneeded[j].Path.Complete)
                         continue;
                     if (PathPlanner.PathReady(CurrentObj[i].Stepsneeded[j].PathID))
                         CurrentObj[i].Stepsneeded[j].SetPath(PathPlanner.GetPath(CurrentObj[i].Stepsneeded[j].PathID));
@@ -391,13 +393,13 @@ public class VillageManager {
             ObjectiveTypes newObj = new ObjectiveTypes();
             GoalState newGoal = new GoalState();
             newGoal.NewBuildings = Building.BuildingType.None;
+            newGoal.NewSkills = new List<Villager.Skills>();
             if(Labs < TotPop *0.25f && Pop < ObjCap && House > 0) // Increase Pop
             {
 
                 // we need to gen a current state / decide what is going to be used here.
                 newObj = ObjectiveTypes.IncreasePopulation;
-                for (int i = 0; i < 5; i++)
-                    newGoal.AddNewSkills(Villager.Skills.Labourer);
+                newGoal.AddNewSkills(Villager.Skills.Labourer);
                 NeededSkills.Add(Villager.Skills.Any);
                 NeededSkills.Add(Villager.Skills.Any);
                 noneselected = 1;
@@ -573,21 +575,24 @@ public class VillageManager {
         int runcount = 0;
         do
         {
-            for (int j = 0; j < AvailableVillagers.Count; j++)
-                if (AvailableVillagers[j].Skill == NeededSkills[0] || NeededSkills[0] == Villager.Skills.Any)
+            if(NeededSkills.Count >0)
+                for (int j = 0; j < AvailableVillagers.Count; j++)
                 {
-                    runcount = 0;
-                    if (State.Villagers == null)
-                        State.Villagers = new List<Villager>();
-                    State.Villagers.Add(AvailableVillagers[j]);
-                    NeededSkills.RemoveAt(0);
-                    AvailableVillagers.RemoveAt(j);
-                    break;
+                    if (AvailableVillagers[j].Skill == NeededSkills[0] || NeededSkills[0] == Villager.Skills.Any)
+                    {
+                        runcount = 0;
+                        if (State.Villagers == null)
+                            State.Villagers = new List<Villager>();
+                        State.Villagers.Add(AvailableVillagers[j]);
+                        NeededSkills.RemoveAt(0);
+                        AvailableVillagers.RemoveAt(j);
+                        break;
+                    }
+                    else
+                        runcount++;
                 }
-                else
-                    runcount++;
         } while (NeededSkills.Count > 0 && runcount > (NeededSkills.Count * 2) * AvailableVillagers.Count);
-        if (NeededSkills.Count > 1)
+        if (NeededSkills.Count > 0)
         {
             AvailableVillagers.AddRange(State.Villagers);
             State.Villagers.Clear();
@@ -609,10 +614,21 @@ public class VillageManager {
     }
     void ObjectiveCompleted()
     {
+        
         for (int i = 0; i < CurrentObj.Count; i++)
         {
             if (ObjectiveCompleted(CurrentObj[i]))
-                CurrentObj.RemoveAt(i);
+            {
+                List<Villager> VillagersNowFree = new List<Villager>();
+                for (int j = 0; j < CurrentObj[i].Stepsneeded.Count;j++)
+                {
+                    for (int p = 0; p < CurrentObj[i].Stepsneeded[j].villager.Count; p++)
+                        if (!VillagersNowFree.Contains(CurrentObj[i].Stepsneeded[j].villager[p]))
+                            VillagersNowFree.Add(CurrentObj[i].Stepsneeded[j].villager[p]);
+                }
+                AvailableVillagers.AddRange(VillagersNowFree);
+                    CurrentObj.RemoveAt(i);
+            }
         }
     }
     Building GenerateBuildingSite(Building.BuildingType Type)
@@ -638,7 +654,7 @@ public class VillageManager {
             dimensions = new Vector2(1, 1);
         }
         // now we search area near the centre of base
-        int range = 20;
+        int range = 5;
         bool FoundPos = false;
         do
 	    {
@@ -646,7 +662,7 @@ public class VillageManager {
             {
                 if (FoundPos)
                     break;
-                for (int j = -range; i < range; j++)
+                for (int j = -range; j < range; j++)
                     if (CheckMapArea(new Vector2(i, j) + StartingPos, dimensions))
                     {
                         FoundPos = true;
@@ -654,7 +670,7 @@ public class VillageManager {
                         break;
                     }
             }
-            range += 20;
+            range += 5;
 	    } while (!FoundPos);
         if (Type == Building.BuildingType.Barracks)
             BuildingChar = '1';
@@ -693,14 +709,14 @@ public class VillageManager {
         for (int i = 0; i < Dimensions.x; i++)
             for (int j = 0; j < Dimensions.y;j++)
             {
-                if (!PathPlanning.Walkable(AiMap, new Vector2(Pos.x + i, Pos.y + j)))
+                if (!PathPlanning.Walkable(AiMap, new Vector2(Pos.x + i, Pos.y + j)) && AiMap[(int)Pos.x + i, (int)Pos.y + j] != 'E')
                     return false;
             }
                 return true;
     }
     bool ObjectiveCompleted(ObjectiveTasks Current)
     {
-        if (Current.Stepsneeded == null)
+        if (Current.Stepsneeded.Count == 0)
             return false;
         foreach (var steps in Current.Stepsneeded)
             if (steps.complete != true)
@@ -711,7 +727,7 @@ public class VillageManager {
 
     bool ObjectiveReady(ObjectiveTasks Current)
     {
-        if (Current.Stepsneeded.Count == 0)
+        if (Current.Stepsneeded.Count == 0 || Current.Stepsneeded == null)
             return false;
         foreach (var Steps in Current.Stepsneeded)
             if (Steps.Path.Complete == false)
@@ -744,6 +760,13 @@ public class VillageManager {
                 // here we are ready, the correct task is selected and all the villagers required are free
                 if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Walk)
                 {
+                    // quck check due to position assignments in pddl , due to villager start being the vil pos and no comparison to objective pos
+                    if (CurrentObj.Stepsneeded[i].Path.Start == CurrentObj.Stepsneeded[i].Path.End)
+                    {
+                        // no walk needed
+                        CurrentObj.Stepsneeded[i].complete = true;
+                        return;
+                    }
                     // only one villager, give the path
                     Vill.AddPath(CurrentObj.Stepsneeded[i].Path.Path);
                     Vill.SetAction(CurrentObj.Stepsneeded[i].Action);
@@ -770,7 +793,7 @@ public class VillageManager {
                     Vill.SetAction(CurrentObj.Stepsneeded[i].Action, 1.0f);
                 else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Store)
                     Vill.SetAction(CurrentObj.Stepsneeded[i].Action, 1.0f);
-                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Cut_Tree)    Vill.SetAction(CurrentObj.Stepsneeded[i].Action, 5.0f);
+                else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Cut_Tree)    Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].TreeInUse, 5.0f);
                 else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Educate)        Vill.SetAction(CurrentObj.Stepsneeded[i].Action, 100.0f);
                 else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Educate_Barracks)    Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 30.0f);
                 else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Family)  Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 20.0f);
@@ -785,7 +808,7 @@ public class VillageManager {
                 else if (CurrentObj.Stepsneeded[i].Action == Villager.Actions.Train) Vill.SetAction(CurrentObj.Stepsneeded[i].Action,CurrentObj.Stepsneeded[i].BuildingInUse, 50.0f);
             }
             // we put special cases like ... skills to learn
-
+            CurrentObj.Stepsneeded[i].villager[0].ActionCallback = CurrentObj.Stepsneeded[i].SetComplete;
             if(CurrentObj.Stepsneeded[i].Action == Villager.Actions.Train ||
                CurrentObj.Stepsneeded[i].Action == Villager.Actions.Educate)
             {

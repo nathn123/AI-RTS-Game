@@ -1,0 +1,7 @@
+; Time 0.00
+; ParsingTime
+; NrActions 2
+; MakeSpan
+; MetricValue
+0: (WALK VILLAGER_0 START_0 BUILDINGSITE ) [1]
+1: (BUILD_TURF VILLAGER_0 BUILDINGSITE ) [1]

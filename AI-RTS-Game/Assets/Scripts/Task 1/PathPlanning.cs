@@ -34,7 +34,7 @@ public class PathPlanning
         }
     }
     List<Node> PotentialNodes;
-    List<PathInfo> Paths;
+    Dictionary<int,PathInfo> Paths;
 
 
     // Use this for initialization
@@ -45,7 +45,7 @@ public class PathPlanning
     public void Initialise(ref char[,] AIMAP)
     {
         Map = AIMAP;
-        Paths = new List<PathInfo>();
+        Paths = new Dictionary<int, PathInfo>();
     }
 
     // Update is called once per frame
@@ -59,12 +59,15 @@ public class PathPlanning
     public PathInfo GetPath(int pathID)
     {
         var temp = Paths[pathID];
+        Paths.Remove(pathID);
         return temp;
     }
     public bool PathReady(int pathID)
     {
         //case to check if path is done then return result
         // if struct is used for path info should be easy
+        if (!Paths.ContainsKey(pathID))
+            return false;
         return Paths[pathID].Complete;
     }
     public int AddPath(PathInfo newPath)
@@ -75,7 +78,7 @@ public class PathPlanning
         //special case as trees are not walkable so
         if (!Walkable(Map, newPath.End))
             newPath.End = ClosestWalkable(newPath.End);
-        Paths.Add(newPath);
+        Paths.Add(Paths.Count,newPath);
         return Paths.Count - 1;
     }
     public static bool Walkable(char[,] map, Vector2 Pos)
