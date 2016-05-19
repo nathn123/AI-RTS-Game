@@ -64,6 +64,7 @@
      <Compile Include="Assets\Scripts\Task 3\VillageManager.cs" />
      <None Include="Assets\Scripts\PDDL\Depend.xml" />
      <None Include="Assets\Terrain\Thanks.txt" />
+     <None Include="Assets\Resources\Buildings\References.txt" />
      <None Include="Assets\Resources\Characters\references.txt" />
      <None Include="Assets\Characters\references.txt" />
      <None Include="Assets\Resources\Terrain\Thanks.txt" />

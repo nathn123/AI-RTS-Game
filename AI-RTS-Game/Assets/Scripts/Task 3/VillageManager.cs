@@ -144,7 +144,7 @@ public class VillageManager {
         //return false;
         return false;
     }
-    public void Initialise(Vector2 StartingPos_,int VillageNum_,AI_Bias bias,TreeManager TreeMgr_,ref char[,] AiMap_)
+    public void Initialise(Vector2 StartingPos_,int VillageNum_,AI_Bias bias,TreeManager TreeMgr_,ref char[,] AiMap_, VillageGen.Scenario NewScenario = new VillageGen.Scenario())
     {
         if(VillageNum_ == 0)
         {
@@ -178,13 +178,46 @@ public class VillageManager {
         AvailableVillagers = new List<Villager>();
         Buildings = new List<Building>();
         TreeMgr = TreeMgr_;
-        Villagers.Add((GameObject.Instantiate(MaleVillager, new Vector3(StartingPos_.x, StartingPos_.y), Quaternion.identity) as GameObject).GetComponent<Villager>() );
-        Villagers.Add( (GameObject.Instantiate(FemaleVillager, new Vector3(StartingPos_.x, StartingPos_.y), Quaternion.identity) as GameObject).GetComponent<Villager>());
-        StartingPos = StartingPos_;
-        foreach (var vill in Villagers)
-            vill.Initialise(StartingPos_);
-        AvailableVillagers.AddRange(Villagers);
-        Initialised = true;
+        if (!NewScenario.Created)
+        {
+            Villagers.Add((GameObject.Instantiate(MaleVillager, new Vector3(StartingPos_.x, StartingPos_.y), Quaternion.identity) as GameObject).GetComponent<Villager>());
+            Villagers.Add((GameObject.Instantiate(FemaleVillager, new Vector3(StartingPos_.x, StartingPos_.y), Quaternion.identity) as GameObject).GetComponent<Villager>());
+            StartingPos = StartingPos_;
+            foreach (var vill in Villagers)
+                vill.Initialise(StartingPos_);
+            AvailableVillagers.AddRange(Villagers);
+            Initialised = true;
+        }
+        else
+        {
+            StartingPos = new Vector2(NewScenario.Xpos, NewScenario.Ypos);
+            // gen scenario
+            for (int i = 0; i < NewScenario.Barracks; i++)
+                Buildings.Add(GenerateBuildingSite(Building.BuildingType.Barracks));
+            for (int i = 0; i < NewScenario.BlackS; i++)
+                Buildings.Add(GenerateBuildingSite(Building.BuildingType.Blacksmith));
+            for (int i = 0; i < NewScenario.House; i++)
+                Buildings.Add(GenerateBuildingSite(Building.BuildingType.House));
+            for (int i = 0; i < NewScenario.Market; i++)
+                Buildings.Add(GenerateBuildingSite(Building.BuildingType.Market));
+            for (int i = 0; i < NewScenario.Mine; i++)
+                Buildings.Add(GenerateBuildingSite(Building.BuildingType.Mine));
+            for (int i = 0; i < NewScenario.Quarry; i++)
+                Buildings.Add(GenerateBuildingSite(Building.BuildingType.Quarry));
+            for (int i = 0; i < NewScenario.Saw; i++)
+                Buildings.Add(GenerateBuildingSite(Building.BuildingType.Sawmill));
+            for (int i = 0; i < NewScenario.School; i++)
+                Buildings.Add(GenerateBuildingSite(Building.BuildingType.School));
+            for (int i = 0; i < NewScenario.Smelter; i++)
+                Buildings.Add(GenerateBuildingSite(Building.BuildingType.Smelter));
+            for (int i = 0; i < NewScenario.Storage; i++)
+                Buildings.Add(GenerateBuildingSite(Building.BuildingType.Storage));
+            for (int i = 0; i < NewScenario.Turf; i++)
+                Buildings.Add(GenerateBuildingSite(Building.BuildingType.Turf));
+            for (int i = 0; i < NewScenario.Villagers; i++)
+                Villagers.Add((GameObject.Instantiate(MaleVillager, new Vector3(StartingPos_.x, StartingPos_.y), Quaternion.identity) as GameObject).GetComponent<Villager>());
+            
+        }
     }
 
 
